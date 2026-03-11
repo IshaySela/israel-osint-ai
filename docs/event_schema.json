@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/osint-map/event.schema.json",
+  "title": "OSINT Event",
+  "description": "A standardized schema for normalized OSINT events from various sources.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "description": "The unique internal identifier for the event record.",
+      "type": "string",
+      "format": "uuid"
+    },
+    "source": {
+      "description": "Metadata identifying where the event originated.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "The category of the source.",
+          "type": "string",
+          "enum": ["telegram", "rss", "web", "api"]
+        },
+        "name": {
+          "description": "The specific channel or website name.",
+          "type": "string"
+        },
+        "url": {
+          "description": "Direct link to the source if available.",
+          "type": "string",
+          "format": "uri"
+        }
+      },
+      "required": ["type", "name"]
+    },
+    "content": {
+      "description": "The core textual and visual information of the event.",
+      "type": "object",
+      "properties": {
+        "text": {
+          "description": "The raw or slightly cleaned text from the source.",
+          "type": "string"
+        },
+        "summary": {
+          "description": "An LLM-generated summary of the content.",
+          "type": "string"
+        },
+        "media": {
+          "description": "List of URLs or paths for associated images or videos.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "required": ["text"]
+    },
+    "location": {
+      "description": "Spatial representation of the event for map display.",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "description": "Latitude coordinate.",
+          "type": "number",
+          "minimum": -90,
+          "maximum": 90
+        },
+        "lon": {
+          "description": "Longitude coordinate.",
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "name": {
+          "description": "Human-readable name of the location (e.g., city or address).",
+          "type": "string"
+        },
+        "precision": {
+          "description": "The accuracy level of the geocoding.",
+          "type": "string",
+          "enum": ["point", "city", "region"]
+        },
+        "confidence": {
+          "description": "The confidence score of the geocoding process (0.0 to 1.0).",
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": ["lat", "lon", "name"]
+    },
+    "timestamp": {
+      "description": "The date and time the event occurred, in ISO 8601 format.",
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "description": "Additional metadata and categorization fields.",
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string"
+        },
+        "is_deleted": {
+          "type": "boolean",
+          "default": false
+        },
+        "category": {
+          "description": "Type of event (e.g., rocket_fire, clash).",
+          "type": "string"
+        },
+        "raw_id": {
+          "description": "The original unique ID from the source (e.g., Telegram message ID).",
+          "type": "string"
+        },
+        "status": {
+          "description": "Current processing status of the event.",
+          "type": "string",
+          "enum": ["processing", "processed", "flagged_for_review"],
+          "default": "processing"
+        }
+      }
+    }
+  },
+  "required": ["id", "source", "content", "location", "timestamp"]
+}
