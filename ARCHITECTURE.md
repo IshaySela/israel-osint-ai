@@ -53,7 +53,7 @@ graph TD
 
 ### Data Flow Breakdown
 
-1.  **Ingestion**: Scrapers extract raw data (JSON/XML/Text) and publish it to a **RabbitMQ** queue.
+1.  **Ingestion**: Scrapers extract raw data (JSON/XML/Text), test against openai (gpt5-nano) that its a relevant event, and publish it to a **RabbitMQ** queue.
 2.  **Queueing**: RabbitMQ buffers bursts of data and ensures messages aren't lost if the processing service is down.
 3.  **Normalization & Enrichment (OpenAI)**: 
     - The **Normalization Service** consumes raw messages.
