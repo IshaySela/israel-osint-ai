@@ -2,6 +2,7 @@ import pika
 import json
 import time
 from typing import Optional, Dict, Any
+from loguru import logger
 from services.Configuration import TelegramScraperConfig
 from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from pika.adapters.blocking_connection import BlockingChannel
@@ -28,10 +29,10 @@ class MessageBroker:
                     pika.ConnectionParameters(host=self.rabbit_host)
                 )
                 self._setup_channel()
-                print(f"Connected to RabbitMQ at {self.rabbit_host}")
+                logger.info(f"Connected to RabbitMQ at {self.rabbit_host}")
                 connected = True
             except AMQPConnectionError:
-                print(f"Failed to connect to RabbitMQ at {self.rabbit_host}, retrying in {self.retry_delay}s...")
+                logger.warning(f"Failed to connect to RabbitMQ at {self.rabbit_host}, retrying in {self.retry_delay}s...")
                 time.sleep(self.retry_delay)
         if not connected:
             raise RuntimeError(f"Failed to connect to RabbitMQ after {self.max_retries} retries")        
@@ -50,7 +51,7 @@ class MessageBroker:
                     body=json.dumps(event_data)
                 )
         except (AMQPConnectionError, AMQPChannelError):
-            print("RabbitMQ connection lost, reconnecting...")
+            logger.error("RabbitMQ connection lost, reconnecting...")
             self._connect()
             if self.channel:
                 self.channel.basic_publish(
