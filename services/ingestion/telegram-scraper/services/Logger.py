@@ -38,10 +38,14 @@ def setup_logging() -> None:
         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
         "<level>{message}</level>"
     )
+    
     logger.add(
         sys.stderr,
         format=LOG_FORMAT,
         colorize=True
     )
+    
+    for library in ["pyrogram", "pika", "asyncio", "urllib3"]:
+        logging.getLogger(library).setLevel(logging.WARNING)
 
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
