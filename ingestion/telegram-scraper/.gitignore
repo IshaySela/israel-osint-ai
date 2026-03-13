@@ -1,0 +1,25 @@
+# Telegram Session Files (MTProto)
+*.session
+*.session-journal
+
+# Environment Variables and Secrets
+.env
+.env.local
+.env.secret
+
+# IDE / Editor Settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python Bytecode and Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Logs
+*.log

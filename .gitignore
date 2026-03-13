@@ -1,2 +1,6 @@
 node_modules
 GEMINI.md
+.env
+venv
+.vscode
+__pycache__

@@ -1,6 +1,8 @@
 
 from dataclasses import dataclass
 import os
+from dotenv import load_dotenv
+
 
 @dataclass
 class TelegramScraperConfig:
@@ -9,7 +11,7 @@ class TelegramScraperConfig:
         self.api_hash = api_hash
     
     @staticmethod
-    def load_config_from_env() -> 'TelegramScraperConfig':
+    def load_from_env() -> 'TelegramScraperConfig':
         """Loads the Telegram API configuration from environment variables.
 
         Raises:
@@ -18,6 +20,8 @@ class TelegramScraperConfig:
         Returns:
             TelegramScraperConfig: The loaded config from env
         """
+        load_dotenv()
+        
         api_id = os.environ.get('TELEGRAM_API_ID')
         api_hash = os.environ.get('TELEGRAM_API_HASH')
         
