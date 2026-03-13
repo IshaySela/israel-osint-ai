@@ -13,7 +13,7 @@ class TelegramScraperConfig:
     __configSingleton: 'None | TelegramScraperConfig' = None
     
     @staticmethod
-    def load_from_env() -> 'TelegramScraperConfig':
+    def get() -> 'TelegramScraperConfig':
         """Loads the Telegram API configuration from environment variables.
 
         Raises:
