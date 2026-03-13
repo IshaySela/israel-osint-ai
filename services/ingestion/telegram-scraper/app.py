@@ -1,4 +1,4 @@
-from Configuration import TelegramScraperConfig
+from services.Configuration import TelegramScraperConfig
 import asyncio
 from pyrogram import filters
 from pyrogram.client import Client
