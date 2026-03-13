@@ -1,14 +1,16 @@
 import asyncio
 from typing import Literal, get_args, TypeGuard
 from openai import AsyncOpenAI
-from Configuration import TelegramScraperConfig
+from .Configuration import TelegramScraperConfig
 
 config = TelegramScraperConfig.get()
 
-type EventTypes = Literal['rocket fire'] | Literal['shooting'] |  Literal['not_relevant']
+EventTypes = Literal['rocket_fire', 'shooting', 'not_relevant']
+
 
 def _is_valid_event(event: str) -> TypeGuard[EventTypes]:
-    return event in get_args(EventTypes)
+    valid_events = get_args(EventTypes)
+    return event in valid_events
 
 client = AsyncOpenAI(
     api_key=config.openai_api_key
@@ -26,7 +28,7 @@ async def classify_telegram_msg(message: str) -> EventTypes:
     result = await client.responses.create(
         input=message,
         instructions=developerPrompt,
-        model="gpt5-nano"
+        model="gpt-5-nano-2025-08-07"
     )
     
     event = result.output_text
