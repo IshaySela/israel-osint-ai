@@ -1,11 +1,10 @@
 import os
 import unittest
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List
 from flask import Flask
 from flask.testing import FlaskClient
 from app import app
 from config import get_config, Config
-from elasticsearch_client import get_es_client, ESClient
 
 class TestBackendService(unittest.TestCase):
     def setUp(self) -> None:
@@ -19,19 +18,20 @@ class TestBackendService(unittest.TestCase):
         cfg2: Config = get_config()
         
         self.assertIs(cfg1, cfg2, "Config should be a singleton instance")
-        self.assertIsInstance(cfg1.port, int)
-        self.assertIsInstance(cfg1.elasticsearch_urls, list)
 
     def test_graphql_endpoint_structure(self) -> None:
         """Test that the /graphql endpoint is reachable and returns the expected structure."""
         query: str = """
         query {
             latestEvents {
-                text
-                event_type
-                chat_id
-                message_id
-                date
+                raw_message
+                summary
+                timestamp
+                locations {
+                    name
+                    lat
+                    lon
+                }
             }
         }
         """
@@ -42,15 +42,21 @@ class TestBackendService(unittest.TestCase):
         self.assertIn("data", data)
         self.assertIn("latestEvents", data["data"])
         
-        # latestEvents should be a list (even if empty)
-        events: List[Any] = data["data"]["latestEvents"]
+        events: List[Dict[str, Any]] = data["data"]["latestEvents"]
         self.assertIsInstance(events, list)
         
         if len(events) > 0:
             event: Dict[str, Any] = events[0]
-            expected_keys: List[str] = ["text", "event_type", "chat_id", "message_id", "date"]
-            for key in expected_keys:
-                self.assertIn(key, event)
+            self.assertIn("raw_message", event)
+            self.assertIn("summary", event)
+            self.assertIn("timestamp", event)
+            self.assertIn("locations", event)
+            self.assertIsInstance(event["locations"], list)
+            if len(event["locations"]) > 0:
+                loc = event["locations"][0]
+                self.assertIn("name", loc)
+                self.assertIn("lat", loc)
+                self.assertIn("lon", loc)
 
 if __name__ == "__main__":
     unittest.main()

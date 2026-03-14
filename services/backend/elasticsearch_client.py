@@ -16,19 +16,32 @@ class ESClient:
         try:
             query: Dict[str, Any] = {
                 "query": {"match_all": {}},
+                "sort": [{"timestamp.keyword": {"order": "desc"}}],
                 "size": size
             }
-            # The Elasticsearch client in v8+ has different return types for search
+            # Use body=query for v8 compatibility if needed, or just pass kwargs
             response: Any = self.client.search(index=self.index, **query)
             events: List[Dict[str, Any]] = []
             
             hits = response.get('hits', {}).get('hits', [])
             for hit in hits:
                 source: Dict[str, Any] = hit.get('_source', {})
-                # Ensure chat_id is returned as a string for GraphQL compatibility
-                if 'chat_id' in source:
-                    source['chat_id'] = str(source['chat_id'])
-                events.append(source)
+                
+                # Transform locations dictionary to list of objects
+                raw_locations: Dict[str, Dict[str, str]] = source.get('locations', {})
+                formatted_locations: List[Dict[str, str]] = [
+                    {"name": name, "lat": str(loc.get("lat", "")), "lon": str(loc.get("lon", ""))}
+                    for name, loc in raw_locations.items()
+                ]
+                
+                event: Dict[str, Any] = {
+                    "raw_message": source.get("raw_message", ""),
+                    "summary": source.get("summary", ""),
+                    "timestamp": source.get("timestamp", ""),
+                    "locations": formatted_locations
+                }
+                logger.debug(f"Formatted event: {event}")
+                events.append(event)
             return events
         except Exception as e:
             logger.error(f"Error fetching from Elasticsearch: {e}")
