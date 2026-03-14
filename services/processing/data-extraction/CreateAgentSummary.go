@@ -1,7 +1,8 @@
-package openaidataextraction
+package dataextraction
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
@@ -20,7 +21,12 @@ Produce output with the following format:
 
 var openaiApiKey string = ""
 
-func ExtractInfo(event models.RawOsintEvent, ctx context.Context) (string, error) {
+type AgentSummary struct {
+	EnLocations []string `json:"enLocations"`
+	HeSummary   string   `json:"heSummary"`
+}
+
+func CreateAgentSummary(event models.RawOsintEvent, ctx context.Context) (AgentSummary, error) {
 	if openaiApiKey == "" {
 		dotenv.Load()
 		openaiApiKey = os.Getenv("OPENAI_API_KEY")
@@ -37,8 +43,16 @@ func ExtractInfo(event models.RawOsintEvent, ctx context.Context) (string, error
 	})
 
 	if err != nil {
-		return "", err
+		return AgentSummary{}, err
 	}
 
-	return resp.OutputText(), nil
+	var agentSummary AgentSummary
+
+	err = json.Unmarshal([]byte(resp.OutputText()), &agentSummary)
+
+	if err != nil {
+		return AgentSummary{}, err
+	}
+
+	return agentSummary, nil
 }
