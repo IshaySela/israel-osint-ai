@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	extractinfo "github.com/IshaySela/israel-osint-ai/services/processing/data-extraction"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
@@ -11,7 +12,9 @@ import (
 )
 
 func main() {
-	broker := MessageQueue.NewRabbitListener("amqp://guest:guest@localhost:5672/", "osint_events")
+	cfg := config.LoadConfig()
+
+	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
 
 	log.Println("Starting message broker...")
 	done := make(chan bool)
@@ -19,14 +22,14 @@ func main() {
 	geocoder := extractinfo.NewGeocodingService()
 
 	esClient := storage.NewElasticsearchClient()
-	err := esClient.Setup([]string{"http://localhost:9200"})
+	err := esClient.Setup(cfg.ElasticsearchURLs)
 	if err != nil {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
 	}
 
 	err = broker.Listen(func(event models.RawOsintEvent) {
 		log.Printf("Received event: %s\n", string(event.Text))
-		result, err := extractinfo.CreateAgentSummary(event, ctx)
+		result, err := extractinfo.CreateAgentSummary(event, ctx, cfg.OpenAIKey, cfg.OpenAIModel)
 
 		if err != nil {
 			log.Printf("Error extracting info: %v\n", err)
@@ -55,7 +58,7 @@ func main() {
 			Timestamp:  event.Date,
 		}
 
-		err = esClient.IndexEvent(ctx, "osint_events", processedEvent)
+		err = esClient.IndexEvent(ctx, cfg.ElasticsearchIndex, processedEvent)
 		if err != nil {
 			log.Printf("Error indexing event to elasticsearch: %v\n", err)
 		} else {

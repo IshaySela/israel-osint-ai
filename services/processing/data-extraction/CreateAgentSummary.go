@@ -3,10 +3,8 @@ package dataextraction
 import (
 	"context"
 	"encoding/json"
-	"os"
 
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
-	dotenv "github.com/joho/godotenv"
 	openai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/responses"
@@ -19,27 +17,20 @@ Produce output with the following format:
 "heSummary": "short event summary in hebrew. note only data from the event and nothing else."
 }`
 
-var openaiApiKey string = ""
-
 type AgentSummary struct {
 	EnLocations []string `json:"enLocations"`
 	HeSummary   string   `json:"heSummary"`
 }
 
-func CreateAgentSummary(event models.RawOsintEvent, ctx context.Context) (AgentSummary, error) {
-	if openaiApiKey == "" {
-		dotenv.Load()
-		openaiApiKey = os.Getenv("OPENAI_API_KEY")
-	}
-
+func CreateAgentSummary(event models.RawOsintEvent, ctx context.Context, apiKey string, modelName string) (AgentSummary, error) {
 	client := openai.NewClient(
-		option.WithAPIKey(openaiApiKey),
+		option.WithAPIKey(apiKey),
 	)
 
 	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
 		Instructions: openai.String(prompt),
 		Input:        responses.ResponseNewParamsInputUnion{OfString: openai.String(event.Text)},
-		Model:        openai.ChatModelGPT5Mini,
+		Model:        openai.ChatModel(modelName),
 	})
 
 	if err != nil {
