@@ -1,0 +1,16 @@
+type Location {
+    name: String!
+    lat: String!
+    lon: String!
+}
+
+type Event {
+    raw_message: String!
+    summary: String!
+    timestamp: String!
+    locations: [Location!]!
+}
+
+type Query {
+    latestEvents: [Event!]!
+}
