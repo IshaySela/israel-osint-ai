@@ -15,6 +15,7 @@ func main() {
 	fmt.Println("Starting message broker...")
 	done := make(chan bool)
 	ctx := context.Background()
+	geocoder := extractinfo.NewGeocodingService()
 
 	err := broker.Listen(func(event models.RawOsintEvent) {
 		fmt.Printf("Received event: %s\n", string(event.Text))
@@ -22,9 +23,24 @@ func main() {
 
 		if err != nil {
 			fmt.Printf("Error extracting info: %v\n", err)
-		} else {
-			fmt.Printf("Sumamry: %s\n", result)
+			return
 		}
+		coordinates, err := geocoder.GetBatchCoordinates(result.EnLocations)
+		if err != nil {
+			fmt.Printf("Error fetching coordinates: %v\n", err)
+			return
+		}
+
+		fmt.Printf("Summary: %s\n", result.HeSummary)
+		fmt.Println("Locations and Coordinates:")
+		for i, location := range result.EnLocations {
+			if i < len(coordinates) {
+				fmt.Printf("- %s: Lat %s, Lon %s\n", location, coordinates[i].Lat, coordinates[i].Lon)
+			} else {
+				fmt.Printf("- %s: Coordinates not found\n", location)
+			}
+		}
+
 	})
 
 	if err != nil {
