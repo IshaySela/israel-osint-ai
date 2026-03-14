@@ -34,7 +34,7 @@ const EventSidebar: React.FC = () => {
   if (error) return <div className="p-4 text-red-400">Error loading events...</div>;
 
   return (
-    <GlassPanel className="h-[calc(100vh-2rem)] w-96 flex flex-col overflow-hidden m-4">
+    <GlassPanel className="h-full w-96 flex flex-col overflow-hidden">
       <div className="p-4 border-b border-cyan-500/20 flex items-center justify-between bg-slate-900/40">
         <h2 className="text-xl font-bold text-cyan-400 flex items-center gap-2">
           <Radio className="w-5 h-5 animate-pulse text-red-500" />
