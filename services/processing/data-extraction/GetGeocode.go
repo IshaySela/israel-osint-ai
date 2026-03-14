@@ -3,6 +3,7 @@ package dataextraction
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"sync"
@@ -45,7 +46,7 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, e
 		<-ticker.C
 		geocode, err := s.fetchFromAPI(location)
 		if err != nil {
-			fmt.Printf("Warning: failed to fetch %s: %v\n", location, err)
+			log.Printf("Warning: failed to fetch %s: %v\n", location, err)
 			continue
 		}
 
