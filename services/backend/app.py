@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Tuple, Union, Optional
 from elasticsearch_client import get_es_client, ESClient
 from config import get_config, Config
 from loguru import logger
+import sys
 
 # Initialize Flask app
 app: Flask = Flask(__name__)
@@ -44,5 +45,5 @@ def graphql_server() -> Tuple[Response, int]:
 
 if __name__ == "__main__":
     cfg: Config = get_config()
-    logger.info(f"Starting BFF on {cfg.host}:{cfg.port} (debug={cfg.debug})")
+    logger.info(f"Starting BFF on {cfg.host}:{cfg.port} (debug={cfg.debug}), elasticsearch={cfg.elasticsearch_urls}")
     app.run(host=cfg.host, port=cfg.port, debug=cfg.debug)

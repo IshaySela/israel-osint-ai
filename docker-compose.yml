@@ -60,7 +60,8 @@ services:
     volumes:
       - ./services/backend:/app
     environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - ELASTICSEARCH_URLS=http://elasticsearch:9200
+      - HOST=0.0.0.0
     depends_on:
       elasticsearch:
         condition: service_healthy
