@@ -15,7 +15,23 @@ type Geocode struct {
 	Lon string `json:"lon"`
 }
 
-type GeocodeResponse []Geocode
+type nominatimGeocodeObject struct {
+	PlaceID     int64    `json:"place_id"`
+	OsmType     string   `json:"osm_type"`
+	OsmID       int64    `json:"osm_id"`
+	Lat         string   `json:"lat"`
+	Lon         string   `json:"lon"`
+	Class       string   `json:"class"`
+	Type        string   `json:"type"` // e.g., "administrative" or "embassy"
+	PlaceRank   int      `json:"place_rank"`
+	Importance  float64  `json:"importance"`
+	AddressType string   `json:"addresstype"` // e.g., "country", "city"
+	Name        string   `json:"name"`
+	DisplayName string   `json:"display_name"`
+	BoundingBox []string `json:"boundingbox"`
+}
+
+type geocodeResponse []nominatimGeocodeObject
 
 type GeocodingService struct {
 	mu    sync.RWMutex
@@ -61,7 +77,7 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, e
 }
 
 func (s *GeocodingService) fetchFromAPI(locationName string) (Geocode, error) {
-	endpoint := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1", url.QueryEscape(locationName))
+	endpoint := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1&countrycodes=il", url.QueryEscape(locationName))
 
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
@@ -77,7 +93,7 @@ func (s *GeocodingService) fetchFromAPI(locationName string) (Geocode, error) {
 	}
 	defer resp.Body.Close()
 
-	var apiResults GeocodeResponse
+	var apiResults geocodeResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResults); err != nil {
 		return Geocode{}, err
 	}
@@ -85,6 +101,12 @@ func (s *GeocodingService) fetchFromAPI(locationName string) (Geocode, error) {
 	if len(apiResults) == 0 {
 		return Geocode{}, fmt.Errorf("no results")
 	}
+	placeRank := PlaceRank(apiResults[0].PlaceRank)
 
-	return apiResults[0], nil
+	// Filter wide response like egypt
+	if placeRank.IsWideScope() {
+		return Geocode{}, fmt.Errorf("no results")
+	}
+
+	return Geocode{Lat: apiResults[0].Lat, Lon: apiResults[0].Lon}, nil
 }
