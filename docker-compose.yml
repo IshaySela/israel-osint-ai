@@ -91,7 +91,7 @@ services:
       - ./services/processing:/app
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - RABBITMQ_QUEUE=raw_events
+      - RABBIT_QUEUE=${RABBIT_QUEUE}
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     depends_on:
@@ -114,6 +114,7 @@ services:
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - RABBIT_HOST=rabbitmq
+      - RABBIT_QUEUE=${RABBIT_QUEUE}
     depends_on:
       rabbitmq:
         condition: service_healthy
