@@ -2,25 +2,29 @@
 
 This project aims to ingest, process, and visualize OSINT data from various sources (Telegram, RSS, Web Scraping) in a unified map-based interface.
 
-## Infrastructure Setup
+## Why?
+The main intent of the project is to create a fully working product using various technologies from end to end.
 
-To start the infrastructure required for local development (Elasticsearch and RabbitMQ), follow these steps:
+## How?
+Multiple microservices that activley ingest OSINT sources. The micro-service utilize the OpenAI API in order to filter 
+events by relevance.
+The processed events are then stored in Elasticsearch database and served to the React app via dedicated service.
+Refere to detailed architecture choices in ARCHITECTURE.md.
 
-### Prerequisites
-- [Docker](https://www.docker.com/get-started)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+## Development Startup
 
-### Start the Services
-Run the following command from the root of the project:
+To start the infrastructure required for local development follow these steps:
+
+### Telegram API
+Generate the app id, app hash via [telegram API development tools](https://my.telegram.org/apps) and setup the ```APP_ID``` and ```APP_HASH``` environment variables
+
+### OpenAI API
+Create OpenAI API key in the [OpenAI API platform](https://platform.openai.com/api-keys) and set the OPENAI_API_KEY environment variable
+
 ```bash
 docker compose up -d
 ```
-
-### Accessing the Services
-- **Elasticsearch**: `http://localhost:9200`
-- **Kibana**: `http://localhost:5601`
-- **RabbitMQ Management UI**: `http://localhost:15672` (Username: `guest`, Password: `guest`)
-- **RabbitMQ AMQP Broker**: `localhost:5672`
+Access the frontend via 
 
 ### Stop the Services
 To stop and remove the containers:
