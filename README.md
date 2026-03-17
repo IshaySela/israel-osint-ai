@@ -2,10 +2,10 @@
 
 This project aims to ingest, process, and visualize OSINT data from various sources (Telegram, RSS, Web Scraping) in a unified map-based interface.
 
-## Why?
+## Why
 The main intent of the project is to create a fully working product using various technologies from end to end.
 
-## How?
+## How
 Multiple microservices that activley ingest OSINT sources. The microservice utilize the OpenAI API in order to filter 
 events by relevance, communicate via RabbitMQ and display the events on a map using React client.
 
