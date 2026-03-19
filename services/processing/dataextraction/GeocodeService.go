@@ -46,12 +46,12 @@ func (s *GeocodingService) GetCoordinate(location string) (Geocode, *GeocodeErro
 	return geocode, nil
 }
 
-func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, *GeocodeError) {
+func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]Geocode, *GeocodeError) {
 	if len(locations) == 0 {
 		return nil, NewGeocodeError(ErrCodeInvalidRequest, "locations list cannot be empty", nil)
 	}
 
-	results := make([]Geocode, 0, len(locations))
+	results := make(map[string]Geocode)
 	ticker := time.NewTicker(1100 * time.Millisecond)
 	defer ticker.Stop()
 
@@ -65,7 +65,7 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, *
 		s.mu.RUnlock()
 
 		if exists {
-			results = append(results, cached)
+			results[location] = cached
 			continue
 		}
 
@@ -80,7 +80,7 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, *
 		s.cache[location] = geocode
 		s.mu.Unlock()
 
-		results = append(results, geocode)
+		results[location] = geocode
 	}
 
 	return results, nil

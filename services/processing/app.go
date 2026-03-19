@@ -39,20 +39,10 @@ func main() {
 
 		log.Printf("AI Summary: %+v\n", result)
 
-		coordinates, geocodeErr := geocoder.GetBatchCoordinates(result.EnLocations)
+		locationMap, geocodeErr := geocoder.GetBatchCoordinates(result.EnLocations)
 		if geocodeErr != nil {
-			log.Printf("Error fetching coordinates: %v\n", err)
+			log.Printf("Error fetching coordinates: %v\n", geocodeErr)
 			return
-		}
-
-		locationMap := make(map[string]dataextraction.Geocode)
-
-		for i, location := range result.EnLocations {
-			if i < len(coordinates) {
-				locationMap[location] = coordinates[i]
-			} else {
-				log.Printf("- %s: Coordinates not found\n", location)
-			}
 		}
 
 		processedEvent := storage.ProcessedEvent{
