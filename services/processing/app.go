@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	extractinfo "github.com/IshaySela/israel-osint-ai/services/processing/data-extraction"
+	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
@@ -19,7 +19,7 @@ func main() {
 	log.Println("Starting message broker...")
 	done := make(chan bool)
 	ctx := context.Background()
-	geocoder := extractinfo.NewGeocodingService()
+	geocoder := dataextraction.NewGeocodingService()
 
 	esClient := storage.NewElasticsearchClient()
 	err := esClient.Setup(cfg.ElasticsearchURLs)
@@ -29,7 +29,7 @@ func main() {
 
 	err = broker.Listen(func(event models.RawOsintEvent) {
 		log.Printf("Received event: %s\n", string(event.Text))
-		result, err := extractinfo.CreateAgentSummary(event, ctx, cfg.OpenAIKey, cfg.OpenAIModel)
+		result, err := dataextraction.CreateAgentSummary(event, ctx, cfg.OpenAIKey, cfg.OpenAIModel)
 
 		if err != nil {
 			log.Printf("Error extracting info: %v\n", err)
@@ -41,7 +41,7 @@ func main() {
 			return
 		}
 
-		locationMap := make(map[string]extractinfo.Geocode)
+		locationMap := make(map[string]dataextraction.Geocode)
 
 		for i, location := range result.EnLocations {
 			if i < len(coordinates) {

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/data-extraction"
+	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 	"github.com/elastic/go-elasticsearch/v8"
 )
 
