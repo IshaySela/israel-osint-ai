@@ -28,4 +28,4 @@ type nominatimGeocodeObject struct {
 	Address     nominatimAddress `json:"address"`
 }
 
-type geocodeResponse []nominatimGeocodeObject
+type nominatimResponse []nominatimGeocodeObject

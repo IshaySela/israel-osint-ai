@@ -3,6 +3,7 @@ package nominatimgeocoder
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -31,7 +32,7 @@ func NominatimSearch(locationName string) (de.Geocode, *de.GeocodeError) {
 		return de.Geocode{}, de.NewGeocodeError(de.ErrCodeNetworkError, fmt.Sprintf("request failed with status code %d", resp.StatusCode), nil)
 	}
 
-	var apiResults geocodeResponse
+	var apiResults nominatimResponse
 	if err := json.NewDecoder(resp.Body).Decode(&apiResults); err != nil {
 		return de.Geocode{}, de.NewGeocodeError(de.ErrCodeParsingError, "failed to decode response", err)
 	}
@@ -39,7 +40,10 @@ func NominatimSearch(locationName string) (de.Geocode, *de.GeocodeError) {
 	if len(apiResults) == 0 {
 		return de.Geocode{}, de.NewGeocodeError(de.ErrCodeNotFound, "no results found", nil)
 	}
+
 	placeRank := PlaceRank(apiResults[0].PlaceRank)
+
+	log.Printf("Nominatim response for %s. PlaceRank %d, Code %s", locationName, placeRank, apiResults[0].Address.CountryCode)
 
 	// Filter wide response like egypt
 	if placeRank.IsWideScope() {
