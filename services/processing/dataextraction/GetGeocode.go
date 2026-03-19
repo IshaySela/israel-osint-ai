@@ -21,6 +21,27 @@ func NewGeocodingService(geocoder GeocoderFunction) *GeocodingService {
 	}
 }
 
+func (s *GeocodingService) GetCoordinate(location string) (Geocode, error) {
+	s.mu.RLock()
+	cached, exists := s.cache[location]
+	s.mu.RUnlock()
+
+	if exists {
+		return cached, nil
+	}
+
+	geocode, err := s.geocoder(location)
+	if err != nil {
+		return Geocode{}, err
+	}
+
+	s.mu.Lock()
+	s.cache[location] = geocode
+	s.mu.Unlock()
+
+	return geocode, nil
+}
+
 func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, error) {
 	results := make([]Geocode, 0, len(locations))
 	ticker := time.NewTicker(1100 * time.Millisecond)
