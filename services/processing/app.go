@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
@@ -14,17 +13,6 @@ import (
 )
 
 func main() {
-	geocoder := dataextraction.NewGeocodingService(nominatim.NominatimSearch)
-	res, err := geocoder.GetBatchCoordinates([]string{"Bakery, Israel"})
-
-	if err != nil {
-		log.Panicf("%s", err.Error())
-	}
-
-	fmt.Println(res)
-}
-
-func main_2() {
 	cfg := config.LoadConfig()
 
 	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
