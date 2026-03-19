@@ -11,6 +11,7 @@ import (
 )
 
 const prompt = `You are a proffesional text analayzer. Extract the location data from a text and summarize the event.
+The location should be as detailed as possible.
 Produce output with the following format:
 {
 "enLocations": ["first location, "second location",....],

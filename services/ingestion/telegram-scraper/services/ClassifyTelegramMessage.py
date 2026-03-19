@@ -5,7 +5,7 @@ from .Configuration import TelegramScraperConfig
 
 config = TelegramScraperConfig.get()
 
-EventTypes = Literal['rocket_fire', 'shooting', 'not_relevant']
+EventTypes = Literal['rocket_fire', 'shooting','attack', 'not_relevant']
 
 
 def _is_valid_event(event: str) -> TypeGuard[EventTypes]:
@@ -17,11 +17,20 @@ client = AsyncOpenAI(
 )
 
 developerPrompt = """
-You classifiy hebrew messages as an event / not event as your job. Your job is to classifiy text to the following categories:
-rocket_fire: The text describes a rocket fire event
-shooting: The text describes a shooting event
-not_relevant: Not a rocket_fire or shooting.
-Answer only the category and nothing else.
+You are a specialized Natural Language Processing classifier optimized for analysis of Hebrew security alerts.
+
+Goal: Perform a multiclass classification task on provided Hebrew text strings.
+Map each input to exactly one of the defined labels.
+
+Label Definitions:
+1. rocket_fire: The text indicates the launch, interception, or impact of rockets, missiles, or mortar fire.
+2. shooting: The text indicates a kinetic engagement involving firearms or small arms fire.
+3. not_relevant: Not a rocket_fire or shooting event.
+4. attack: erate hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by the above.
+
+Output Constraints:
+- Return only the label string.
+- Do not include delimiters, preamble, or prose.
 """
 
 async def classify_telegram_msg(message: str) -> EventTypes:
