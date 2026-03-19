@@ -83,5 +83,9 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]G
 		results[location] = geocode
 	}
 
+	if len(results) == 0 {
+		return nil, NewGeocodeError(ErrCodeNotFound, "no locations found", nil)
+	}
+
 	return results, nil
 }
