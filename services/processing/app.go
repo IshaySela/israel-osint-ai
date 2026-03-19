@@ -36,8 +36,11 @@ func main() {
 			log.Printf("Error extracting info: %v\n", err)
 			return
 		}
-		coordinates, err := geocoder.GetBatchCoordinates(result.EnLocations)
-		if err != nil {
+
+		log.Printf("AI Summary: %+v\n", result)
+
+		coordinates, geocodeErr := geocoder.GetBatchCoordinates(result.EnLocations)
+		if geocodeErr != nil {
 			log.Printf("Error fetching coordinates: %v\n", err)
 			return
 		}
