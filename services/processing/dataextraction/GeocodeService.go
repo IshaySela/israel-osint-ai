@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type GeocoderFunction func(string) (Geocode, error)
+type GeocoderFunction func(string) (Geocode, *GeocodeError)
 
 type GeocodingService struct {
 	mu       sync.RWMutex
@@ -21,7 +21,11 @@ func NewGeocodingService(geocoder GeocoderFunction) *GeocodingService {
 	}
 }
 
-func (s *GeocodingService) GetCoordinate(location string) (Geocode, error) {
+func (s *GeocodingService) GetCoordinate(location string) (Geocode, *GeocodeError) {
+	if location == "" {
+		return Geocode{}, NewGeocodeError(ErrCodeInvalidRequest, "location string cannot be empty", nil)
+	}
+
 	s.mu.RLock()
 	cached, exists := s.cache[location]
 	s.mu.RUnlock()
@@ -42,12 +46,20 @@ func (s *GeocodingService) GetCoordinate(location string) (Geocode, error) {
 	return geocode, nil
 }
 
-func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, error) {
+func (s *GeocodingService) GetBatchCoordinates(locations []string) ([]Geocode, *GeocodeError) {
+	if len(locations) == 0 {
+		return nil, NewGeocodeError(ErrCodeInvalidRequest, "locations list cannot be empty", nil)
+	}
+
 	results := make([]Geocode, 0, len(locations))
 	ticker := time.NewTicker(1100 * time.Millisecond)
 	defer ticker.Stop()
 
 	for _, location := range locations {
+		if location == "" {
+			continue
+		}
+
 		s.mu.RLock()
 		cached, exists := s.cache[location]
 		s.mu.RUnlock()
