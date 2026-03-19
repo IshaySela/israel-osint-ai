@@ -2,16 +2,29 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	nominatim "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/nominatimgeocoder"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
 )
 
 func main() {
+	geocoder := dataextraction.NewGeocodingService(nominatim.NominatimSearch)
+	res, err := geocoder.GetBatchCoordinates([]string{"Bakery, Israel"})
+
+	if err != nil {
+		log.Panicf("%s", err.Error())
+	}
+
+	fmt.Println(res)
+}
+
+func main_2() {
 	cfg := config.LoadConfig()
 
 	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
@@ -19,7 +32,7 @@ func main() {
 	log.Println("Starting message broker...")
 	done := make(chan bool)
 	ctx := context.Background()
-	geocoder := dataextraction.NewGeocodingService()
+	geocoder := dataextraction.NewGeocodingService(nominatim.NominatimSearch)
 
 	esClient := storage.NewElasticsearchClient()
 	err := esClient.Setup(cfg.ElasticsearchURLs)

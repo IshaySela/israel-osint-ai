@@ -1,4 +1,4 @@
-package dataextraction
+package nominatimgeocoder
 
 // PlaceRank represents the Nominatim spatial granularity level.
 // https://nominatim.org/release-docs/latest/customize/Ranking/#search-rank
