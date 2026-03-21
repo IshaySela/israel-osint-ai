@@ -11,13 +11,14 @@ import (
 )
 
 type Config struct {
-	RabbitMQURL        string
-	RabbitMQQueue      string
-	ElasticsearchURLs  []string
-	ElasticsearchIndex string
-	OpenAIKey          string
-	OpenAIModel        string
-	WorkerCount        int
+	RabbitMQURL               string
+	RabbitMQQueue             string
+	ElasticsearchURLs         []string
+	ElasticsearchIndex        string
+	ElasticsearchGeocodeIndex string
+	OpenAIKey                 string
+	OpenAIModel               string
+	WorkerCount               int
 }
 
 var (
@@ -33,13 +34,14 @@ func LoadConfig() *Config {
 		}
 
 		instance = &Config{
-			RabbitMQURL:        getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
-			RabbitMQQueue:      getEnv("RABBITMQ_QUEUE", "osint_events"),
-			ElasticsearchURLs:  strings.Split(getEnv("ELASTICSEARCH_URLS", "http://localhost:9200"), ","),
-			ElasticsearchIndex: getEnv("ELASTICSEARCH_INDEX", "osint_events"),
-			OpenAIKey:          getEnv("OPENAI_API_KEY", ""),
-			OpenAIModel:        getEnv("OPENAI_MODEL", "gpt-5-mini"),
-			WorkerCount:        getEnvInt("WORKER_COUNT", 5),
+			RabbitMQURL:               getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
+			RabbitMQQueue:             getEnv("RABBITMQ_QUEUE", "osint_events"),
+			ElasticsearchURLs:         strings.Split(getEnv("ELASTICSEARCH_URLS", "http://localhost:9200"), ","),
+			ElasticsearchIndex:        getEnv("ELASTICSEARCH_INDEX", "osint_events"),
+			ElasticsearchGeocodeIndex: getEnv("ELASTICSEARCH_GEOCODE_INDEX", "geocode_cache"),
+			OpenAIKey:                 getEnv("OPENAI_API_KEY", ""),
+			OpenAIModel:               getEnv("OPENAI_MODEL", "gpt-5-mini"),
+			WorkerCount:               getEnvInt("WORKER_COUNT", 5),
 		}
 	})
 
