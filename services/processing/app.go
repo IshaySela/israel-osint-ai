@@ -4,25 +4,30 @@ import (
 	"context"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 	nominatim "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/nominatimgeocoder"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/IshaySela/israel-osint-ai/services/processing/processor"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	"golang.org/x/time/rate"
 )
 
 func main() {
 	cfg := config.LoadConfig()
-	wg := sync.WaitGroup{}
-
+	var wg sync.WaitGroup
+	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
 	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
 
 	log.Println("Starting message broker...")
 	ctx := context.Background()
-	geocoder := dataextraction.NewGeocodingService(nominatim.NominatimSearch)
+
+	geocoder := de.NewGeocodingService(func(location string) (de.Geocode, *de.GeocodeError) {
+		return nominatim.NominatimSearch(location, rateLimiter)
+	})
 
 	esClient := storage.NewElasticsearchClient()
 	err := esClient.Setup(cfg.ElasticsearchURLs)
