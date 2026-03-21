@@ -23,7 +23,7 @@ broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
 async def listen_for_messages(client: Client, message: Message):
     text = f"{message.caption or ''} {message.text or ''}"
     event_type = await classify_telegram_msg(text)
-    logger.info(f"Received msg: {text[:50]}... | Type: {event_type}")
+    logger.info(f"Received msg: {text[:100]}... | Type: {event_type}")
     
     if event_type != 'not_relevant':
         event_data = {
