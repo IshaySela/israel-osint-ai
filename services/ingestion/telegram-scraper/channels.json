@@ -1,0 +1,24 @@
+{
+  "channels": [
+    {
+      "channelId": -1003756841569,
+      "channelName": "test",
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1001406113886,
+      "channelName": "חדשות 100שטח",
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1002065515052,
+      "channelName": "M.B iNSIDER",
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1001474443960,
+      "channelName": "חדשות מבצעי",
+      "channelMainLang": "he"
+    }
+  ]
+}

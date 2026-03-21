@@ -1,5 +1,4 @@
 from services.Configuration import TelegramScraperConfig
-import asyncio
 from pyrogram import filters
 from pyrogram.client import Client
 from pyrogram.types import Message
@@ -12,15 +11,19 @@ setup_logging()
 
 
 CONFIG = TelegramScraperConfig.get()
-LIVE_TEST_CHANNEL = -1001613161072
-TZOFAR_TEST_CHANNEL = -1001436772127
-MY_TEST_CHANNEL = -1003756841569
 client = Client("israel-osint-ai-telegram", CONFIG.api_id, CONFIG.api_hash)
+logger.info(f"Starting Telegram Scraper, listening on channels: {CONFIG.channels}")
 
 broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
 
-@client.on_message(filters.channel & filters.chat([LIVE_TEST_CHANNEL, TZOFAR_TEST_CHANNEL, MY_TEST_CHANNEL]))
-async def listen_for_messages(client: Client, message: Message):
+@client.on_message(filters.channel)
+async def debug_messages(client: Client, message: Message):
+    is_monitored = message.chat.id in CONFIG.channels
+    logger.info(f"Received message from channel ID: {message.chat.id} (Monitored: {is_monitored})")
+    
+    if not is_monitored:
+        return
+
     text = f"{message.caption or ''} {message.text or ''}"
     event_type = await classify_telegram_msg(text)
     logger.info(f"Received msg: {text[:100]}... | Type: {event_type}")
