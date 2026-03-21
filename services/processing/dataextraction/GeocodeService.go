@@ -3,7 +3,6 @@ package dataextraction
 import (
 	"log"
 	"sync"
-	"time"
 )
 
 type GeocoderFunction func(string) (Geocode, *GeocodeError)
@@ -52,8 +51,6 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]G
 	}
 
 	results := make(map[string]Geocode)
-	ticker := time.NewTicker(1100 * time.Millisecond)
-	defer ticker.Stop()
 
 	for _, location := range locations {
 		if location == "" {
@@ -69,7 +66,6 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]G
 			continue
 		}
 
-		<-ticker.C
 		geocode, err := s.geocoder(location)
 		if err != nil {
 			log.Printf("Warning: failed to fetch %s: %v\n", location, err)

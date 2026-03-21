@@ -11,6 +11,10 @@ import (
 	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 )
 
+// the ticker is used to make sure that if the NominatimSearch is used via multiple
+// goroutines, the rate limiting is still intact
+var ticker = time.NewTicker(1100 * time.Millisecond)
+
 func NominatimSearch(locationName string) (de.Geocode, *de.GeocodeError) {
 	endpoint := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1&addressdetails=1", url.QueryEscape(locationName))
 
@@ -22,7 +26,9 @@ func NominatimSearch(locationName string) (de.Geocode, *de.GeocodeError) {
 	req.Header.Set("User-Agent", "OsintProcessingService/1.0 (ishaisela@gmail.com)")
 
 	client := &http.Client{Timeout: 10 * time.Second}
+	<-ticker.C
 	resp, err := client.Do(req)
+
 	if err != nil {
 		return de.Geocode{}, de.NewGeocodeError(de.ErrCodeNetworkError, "failed to execute request", err)
 	}
