@@ -11,13 +11,14 @@ from loguru import logger
 setup_logging()
 
 CONFIG = TelegramScraperConfig.get()
+MONITORED_CHANNEL_IDS = {c.channelId for c in CONFIG.channels}
 client = Client("israel-osint-ai-telegram", CONFIG.api_id, CONFIG.api_hash)
 
 # broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
 
 @client.on_message(filters.channel)
-async def debug_messages(client: Client, message: Message):
-    is_monitored = message.chat.id in CONFIG.channels
+async def debug_messages(client: Client, message: Message) -> None:
+    is_monitored = message.chat.id in MONITORED_CHANNEL_IDS
     logger.info(f"Received message from channel ID: {message.chat.id} (Monitored: {is_monitored})")
     
     if not is_monitored:
@@ -35,11 +36,13 @@ async def debug_messages(client: Client, message: Message):
             'message_id': message.id,
             'date': str(message.date)
         }
+        # broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
         # broker.publish_event(event_data)
         logger.info(f"Published event: {event_type}")
 
 async def main() -> None:
-    logger.info(f"Starting Telegram Scraper, listening on channels: {CONFIG.channels}")
+    channel_names = [c.channelName for c in CONFIG.channels]
+    logger.info(f"Starting Telegram Scraper, listening on channels: {channel_names}")
     async with client:
         await asyncio.Event().wait()
 
