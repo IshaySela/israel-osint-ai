@@ -3,24 +3,31 @@ package main
 import (
 	"context"
 	"log"
+	"sync"
+	"time"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 	nominatim "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/nominatimgeocoder"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	"github.com/IshaySela/israel-osint-ai/services/processing/processor"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	"golang.org/x/time/rate"
 )
 
 func main() {
 	cfg := config.LoadConfig()
-
+	var wg sync.WaitGroup
+	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
 	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
 
 	log.Println("Starting message broker...")
-	done := make(chan bool)
 	ctx := context.Background()
-	geocoder := dataextraction.NewGeocodingService(nominatim.NominatimSearch)
+
+	geocoder := de.NewGeocodingService(func(location string) (de.Geocode, *de.GeocodeError) {
+		return nominatim.NominatimSearch(location, rateLimiter)
+	})
 
 	esClient := storage.NewElasticsearchClient()
 	err := esClient.Setup(cfg.ElasticsearchURLs)
@@ -28,42 +35,25 @@ func main() {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
 	}
 
+	proc := processor.NewProcessor(cfg, geocoder, esClient)
+	taskQueue := make(chan models.RawOsintEvent, 100)
+
+	log.Printf("Starting %d workers...\n", cfg.WorkerCount)
+	for i := 0; i < cfg.WorkerCount; i++ {
+		wg.Add(1)
+		go func() {
+			proc.StartWorker(ctx, taskQueue)
+			wg.Done()
+		}()
+	}
+
 	err = broker.Listen(func(event models.RawOsintEvent) {
-		log.Printf("Received event: %s\n", string(event.Text))
-		result, err := dataextraction.CreateAgentSummary(event, ctx, cfg.OpenAIKey, cfg.OpenAIModel)
-
-		if err != nil {
-			log.Printf("Error extracting info: %v\n", err)
-			return
-		}
-
-		log.Printf("AI Summary: %+v\n", result)
-
-		locationMap, geocodeErr := geocoder.GetBatchCoordinates(result.EnLocations)
-		if geocodeErr != nil {
-			log.Printf("Error fetching coordinates: %v\n", geocodeErr)
-			return
-		}
-
-		processedEvent := storage.ProcessedEvent{
-			RawMessage: event.Text,
-			Summary:    result.HeSummary,
-			Locations:  locationMap,
-			Timestamp:  event.Date,
-		}
-
-		err = esClient.IndexEvent(ctx, cfg.ElasticsearchIndex, processedEvent)
-		if err != nil {
-			log.Printf("Error indexing event to elasticsearch: %v\n", err)
-		} else {
-			log.Println("Successfully indexed event to elasticsearch")
-		}
-
+		taskQueue <- event
 	})
 
 	if err != nil {
 		log.Printf("Error starting message broker: %v\n", err)
 	}
 
-	<-done
+	wg.Wait()
 }

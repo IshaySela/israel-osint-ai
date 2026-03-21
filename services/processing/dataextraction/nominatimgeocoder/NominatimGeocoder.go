@@ -9,11 +9,11 @@ import (
 	"time"
 
 	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	"golang.org/x/time/rate"
 )
 
-func NominatimSearch(locationName string) (de.Geocode, *de.GeocodeError) {
+func NominatimSearch(locationName string, limiter *rate.Limiter) (de.Geocode, *de.GeocodeError) {
 	endpoint := fmt.Sprintf("https://nominatim.openstreetmap.org/search?q=%s&format=json&limit=1&addressdetails=1", url.QueryEscape(locationName))
-
 	req, err := http.NewRequest("GET", endpoint, nil)
 	if err != nil {
 		return de.Geocode{}, de.NewGeocodeError(de.ErrCodeInvalidRequest, "failed to create request", err)
@@ -23,6 +23,7 @@ func NominatimSearch(locationName string) (de.Geocode, *de.GeocodeError) {
 
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
+
 	if err != nil {
 		return de.Geocode{}, de.NewGeocodeError(de.ErrCodeNetworkError, "failed to execute request", err)
 	}
