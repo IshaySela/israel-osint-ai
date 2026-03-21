@@ -3,22 +3,26 @@
     {
       "channelId": -1003756841569,
       "channelName": "test",
-      "channelMainLang": "he"
+      "channelMainLang": "he",
+      "managerUsername": "unknown"
     },
     {
       "channelId": -1001406113886,
       "channelName": "חדשות 100שטח",
-      "channelMainLang": "he"
+      "channelMainLang": "he",
+      "managerUsername": "unknown"
     },
     {
       "channelId": -1002065515052,
       "channelName": "M.B iNSIDER",
-      "channelMainLang": "he"
+      "channelMainLang": "he",
+      "managerUsername": "unknown"
     },
     {
       "channelId": -1001474443960,
-      "channelName": "חדשות מבצעי",
-      "channelMainLang": "he"
+      "channelName": "מבזקי רעם - מבזקי חדשות בזמן אמת",
+      "channelMainLang": "he",
+      "managerUsername": "unknown"
     }
   ]
 }
