@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -16,6 +17,7 @@ type Config struct {
 	ElasticsearchIndex string
 	OpenAIKey          string
 	OpenAIModel        string
+	WorkerCount        int
 }
 
 var (
@@ -37,6 +39,7 @@ func LoadConfig() *Config {
 			ElasticsearchIndex: getEnv("ELASTICSEARCH_INDEX", "osint_events"),
 			OpenAIKey:          getEnv("OPENAI_API_KEY", ""),
 			OpenAIModel:        getEnv("OPENAI_MODEL", "gpt-5-mini"),
+			WorkerCount:        getEnvInt("WORKER_COUNT", 5),
 		}
 	})
 
@@ -46,6 +49,17 @@ func LoadConfig() *Config {
 func getEnv(key, defaultValue string) string {
 	if value, exists := os.LookupEnv(key); exists {
 		return value
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value, exists := os.LookupEnv(key); exists {
+		var result int
+		_, err := fmt.Sscanf(value, "%d", &result)
+		if err == nil {
+			return result
+		}
 	}
 	return defaultValue
 }
