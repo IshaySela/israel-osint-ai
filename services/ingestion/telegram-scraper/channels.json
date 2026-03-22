@@ -3,26 +3,42 @@
     {
       "channelId": -1003756841569,
       "channelName": "test",
-      "channelMainLang": "he",
-      "managerUsername": "unknown"
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1003531445954,
+      "channelName": "בדיקה בדיקה",
+      "channelMainLang": "he"
     },
     {
       "channelId": -1001406113886,
       "channelName": "חדשות 100שטח",
-      "channelMainLang": "he",
-      "managerUsername": "unknown"
+      "channelMainLang": "he"
     },
     {
       "channelId": -1002065515052,
       "channelName": "M.B iNSIDER",
-      "channelMainLang": "he",
-      "managerUsername": "unknown"
+      "channelMainLang": "he"
     },
     {
       "channelId": -1001474443960,
       "channelName": "מבזקי רעם - מבזקי חדשות בזמן אמת",
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1001613161072,
+      "channelName": "דניאל עמרם ללא צנזורה",
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1001148247993,
+      "channelName": "חדשות 55 שומרון",
+      "channelMainLang": "he"
+    },
+    {
+      "channelId": -1001337442223,
       "channelMainLang": "he",
-      "managerUsername": "unknown"
+      "channelName": "אינטליניוז - שאגת הארי | חדשות המזרח התיכון"
     }
   ]
 }

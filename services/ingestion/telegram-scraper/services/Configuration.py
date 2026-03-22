@@ -11,8 +11,6 @@ class ChannelInfo:
     channelId: int
     channelName: str
     channelMainLang: str
-    managerUsername: str
-
 
 @dataclass
 class TelegramScraperConfig:
@@ -23,7 +21,7 @@ class TelegramScraperConfig:
     rabbit_queue: str
     channels: List[ChannelInfo]
 
-    __configSingleton: Optional['TelegramScraperConfig'] = None
+    configSingleton: Optional['TelegramScraperConfig'] = None
     
     @staticmethod
     def get() -> 'TelegramScraperConfig':
@@ -36,8 +34,8 @@ class TelegramScraperConfig:
             TelegramScraperConfig: The loaded config
         """
         
-        if TelegramScraperConfig.__configSingleton is not None:
-            return TelegramScraperConfig.__configSingleton
+        if TelegramScraperConfig.configSingleton is not None:
+            return TelegramScraperConfig.configSingleton
         
         load_dotenv()
         openai_api_key: Optional[str] = os.environ.get('OPENAI_API_KEY')
@@ -61,7 +59,6 @@ class TelegramScraperConfig:
                         channelId=c['channelId'],
                         channelName=c['channelName'],
                         channelMainLang=c['channelMainLang'],
-                        managerUsername=c.get('managerUsername', 'unknown')
                     ) for c in channels_data['channels']
                 ]
         except (json.JSONDecodeError, KeyError, TypeError) as e:
@@ -78,5 +75,5 @@ class TelegramScraperConfig:
             rabbit_queue=rabbit_queue,
             channels=channels
         )
-        TelegramScraperConfig.__configSingleton = config
+        TelegramScraperConfig.configSingleton = config
         return config
