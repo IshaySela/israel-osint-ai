@@ -1,68 +1,57 @@
 import asyncio
 from typing import List
-from services.Configuration import TelegramScraperConfig
-from pyrogram import filters
-from pyrogram.client import Client
-from pyrogram.methods.utilities.idle import idle
-from pyrogram.types import Message
-from services.ClassifyTelegramMessage import classify_telegram_msg
-from services.MessageBroker import MessageBroker
 from services.Logger import setup_logging
 from loguru import logger
+from services.Configuration import TelegramScraperConfig
+from telethon import TelegramClient, events
+from telethon.types import Message, Chat
+from services.MessageBroker import MessageBroker
+from services.ClassifyTelegramMessage import classify_telegram_msg
 
 setup_logging()
 
 CONFIG = TelegramScraperConfig.get()
-MONITORED_CHANNEL_IDS: List[str | int] = [c.channelId for c in CONFIG.channels]
+MONITORED_CHANNEL_IDS: List[int] = [c.channelId for c in CONFIG.channels]
 
+
+client = TelegramClient('israel-osint-ai-telegram', int(CONFIG.api_id), CONFIG.api_hash)
 broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
 
-async def main():
-    client = Client("israel-osint-ai-telegram", CONFIG.api_id, CONFIG.api_hash)
-  
-    @client.on_message(filters.channel & filters.chat(MONITORED_CHANNEL_IDS))
-    async def process_messages(client: Client, message: Message) -> None:
-        """Process messages from monitored channels."""
-        text = f"{message.caption or ''} {message.text or ''}".strip()
-        if not text:
-            return
 
-        logger.info(f"Recived Message from channel {message.chat.title} {message.chat.id}")
-
-        event_type = await classify_telegram_msg(text)
-        logger.info(f"Classified Message from channel{message.chat.id}: {text[:30]}... | Type: {event_type}")
+@client.on(events.NewMessage(chats=MONITORED_CHANNEL_IDS))
+async def handler(event: events.NewMessage.Event):
+    msg: Message = event.message
+    text = msg.message or ''
+    
+    chat: Chat = await event.get_chat() # type: ignore
+    
+    if text is None:
+        logger.error(f"Skipping, recived empty msg from channel {chat.id} {chat.title}")
+    
+    logger.error(f"Recived msg from channel {chat.id} {chat.title} {text[:30]}")
+    
+    event_type = await classify_telegram_msg(text)
+    logger.info(f"Classified Message from channel{chat.id}: {text[:30]}... | Type: {event_type}")
         
-        if event_type != 'not_relevant':
-            event_data = {
-                'text': text,
-                'event_type': event_type,
-                'chat_id': message.chat.id,
-                'message_id': message.id,
-                'date': str(message.date)
-            }
-            
-            broker.publish_event(event_data)
-            logger.info(f"Published event: {event_type} {text[:30]}")
-            
-            
-    await client.start()
+    if event_type != 'not_relevant':
+        event_data = {
+            'text': text,
+            'event_type': event_type,
+            'chat_id': chat.id,
+            'message_id': msg.id,
+            'date': str(msg.date)
+        }
+        
+        broker.publish_event(event_data)
+        logger.info(f"Published event: {event_type} {text[:30]}")
     
-    logger.info("Initializing channel cache...")
-    async for dialog in client.get_dialogs(limit=100): # type: ignore
-        if dialog.chat.id in MONITORED_CHANNEL_IDS:
-            logger.info(f"Init channel: {dialog.chat.id} {dialog.chat.title}") 
-    
-    logger.info("Telegram Scraper is now online and listening.")
-    
-    await idle() 
-    
-    await client.stop()
 
-
+async def main():
+    logger.info(f"Starting telegram scraper service for channels: {[c.channelName for c in CONFIG.channels]}")
+    client.start()
+    await client.connect()
+    
+    await client.run_until_disconnected() # type: ignore
+   
 if __name__ == "__main__":
-    channelsInfo = [{c.channelName, c.channelId} for c in CONFIG.channels]
-    logger.info(f"Starting Telegram Scraper, listening on channels: {channelsInfo}")
-    try:
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info("Scraper stopped by user")
+    asyncio.run(main())

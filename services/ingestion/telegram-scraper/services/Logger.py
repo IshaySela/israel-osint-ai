@@ -6,7 +6,7 @@ from loguru import logger
 
 class InterceptHandler(logging.Handler):
     """
-    Bridges standard library logging (Pyrogram, Pika) to Loguru.
+    Bridges standard library logging to Loguru.
     """
     def emit(self, record: logging.LogRecord) -> None:
         try:
@@ -45,7 +45,7 @@ def setup_logging() -> None:
         colorize=True
     )
     
-    for library in ["pyrogram", "pika", "asyncio", "urllib3"]:
+    for library in ["telethon", "pika", "asyncio", "urllib3"]:
         logging.getLogger(library).setLevel(logging.WARNING)
 
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
