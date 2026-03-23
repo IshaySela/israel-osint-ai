@@ -34,10 +34,17 @@ docker compose down
 Refer to [ARCHITECTURE.md](ARCHITECTURE.md) for more details.
 
 ## Roadmap
+- SSE between the backend and the clients
+- Image & Video of events from telegram scraper
+- Displaying events in a polygon over a certain area
+- More scrapers types (RSS, x.com etc.)
+- Analyzing events over time
+
+## Implemented Features
 ### Sprint 1: Core Implementation (Walking Skeleton) - Done.
 Basic implementation of the services, ensure that data flows correctly and visualized on the map, startup via docker compose.
 
-### Sprint 2: Performance & Robustness
+### Sprint 2: Performance & Robustness - Done
 - Persistent geocode result caching
 - Events filtering
 - Implement the worker pool pattern in the processing service
