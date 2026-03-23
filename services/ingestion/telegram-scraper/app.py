@@ -1,39 +1,57 @@
-from services.Configuration import TelegramScraperConfig
 import asyncio
-from pyrogram import filters
-from pyrogram.client import Client
-from pyrogram.types import Message
-from services.ClassifyTelegramMessage import classify_telegram_msg
-from services.MessageBroker import MessageBroker
+from typing import List
 from services.Logger import setup_logging
 from loguru import logger
+from services.Configuration import TelegramScraperConfig
+from telethon import TelegramClient, events
+from telethon.types import Message, Chat
+from services.MessageBroker import MessageBroker
+from services.ClassifyTelegramMessage import classify_telegram_msg
 
 setup_logging()
 
-
 CONFIG = TelegramScraperConfig.get()
-LIVE_TEST_CHANNEL = -1001613161072
-TZOFAR_TEST_CHANNEL = -1001436772127
-MY_TEST_CHANNEL = -1003756841569
-client = Client("israel-osint-ai-telegram", CONFIG.api_id, CONFIG.api_hash)
+MONITORED_CHANNEL_IDS: List[int] = [c.channelId for c in CONFIG.channels]
 
+
+client = TelegramClient('israel-osint-ai-telegram', int(CONFIG.api_id), CONFIG.api_hash)
 broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
 
-@client.on_message(filters.channel & filters.chat([LIVE_TEST_CHANNEL, TZOFAR_TEST_CHANNEL, MY_TEST_CHANNEL]))
-async def listen_for_messages(client: Client, message: Message):
-    text = f"{message.caption or ''} {message.text or ''}"
-    event_type = await classify_telegram_msg(text)
-    logger.info(f"Received msg: {text[:50]}... | Type: {event_type}")
+
+@client.on(events.NewMessage(chats=MONITORED_CHANNEL_IDS))
+async def handler(event: events.NewMessage.Event):
+    msg: Message = event.message
+    text = msg.message or ''
     
+    chat: Chat = await event.get_chat() # type: ignore
+    
+    if text is None:
+        logger.error(f"Skipping, recived empty msg from channel {chat.id} {chat.title}")
+    
+    logger.error(f"Recived msg from channel {chat.id} {chat.title} {text[:30]}")
+    
+    event_type = await classify_telegram_msg(text)
+    logger.info(f"Classified Message from channel{chat.id}: {text[:30]}... | Type: {event_type}")
+        
     if event_type != 'not_relevant':
         event_data = {
             'text': text,
             'event_type': event_type,
-            'chat_id': message.chat.id,
-            'message_id': message.id,
-            'date': str(message.date)
+            'chat_id': chat.id,
+            'message_id': msg.id,
+            'date': str(msg.date)
         }
+        
         broker.publish_event(event_data)
-        logger.info(f"Published event: {event_type}")
+        logger.info(f"Published event: {event_type} {text[:30]}")
     
-client.run()
+
+async def main():
+    logger.info(f"Starting telegram scraper service for channels: {[c.channelName for c in CONFIG.channels]}")
+    client.start()
+    await client.connect()
+    
+    await client.run_until_disconnected() # type: ignore
+   
+if __name__ == "__main__":
+    asyncio.run(main())
