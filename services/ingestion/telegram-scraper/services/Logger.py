@@ -45,7 +45,7 @@ def setup_logging() -> None:
         colorize=True
     )
     
-    for library in ["pyrogram", "pika", "asyncio", "urllib3"]:
+    for library in ["telethon", "pika", "asyncio", "urllib3"]:
         logging.getLogger(library).setLevel(logging.WARNING)
 
     logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
