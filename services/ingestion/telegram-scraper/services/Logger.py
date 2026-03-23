@@ -6,7 +6,7 @@ from loguru import logger
 
 class InterceptHandler(logging.Handler):
     """
-    Bridges standard library logging (Pyrogram, Pika) to Loguru.
+    Bridges standard library logging to Loguru.
     """
     def emit(self, record: logging.LogRecord) -> None:
         try:
