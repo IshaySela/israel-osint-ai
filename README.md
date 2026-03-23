@@ -37,7 +37,8 @@ Refer to [ARCHITECTURE.md](ARCHITECTURE.md) for more details.
 ### Sprint 1: Core Implementation (Walking Skeleton) - Done.
 Basic implementation of the services, ensure that data flows correctly and visualized on the map, startup via docker compose.
 
-### Sprint 2: Quality of Life
-- Adding SSE between the backend and the frontend
-- Improved geocooding and summarization
-- Introduce another ingestion service
+### Sprint 2: Performance & Robustness
+- Persistent geocode result caching
+- Events filtering
+- Implement the worker pool pattern in the processing service
+- Bug fixes
