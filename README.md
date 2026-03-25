@@ -15,16 +15,16 @@ events by relevance, communicate via RabbitMQ and display the events on a map us
 
 To start the infrastructure required for local development follow these steps:
 
-### Telegram API
-Generate the app id, app hash via [telegram API development tools](https://my.telegram.org/apps) and setup the ```APP_ID``` and ```APP_HASH``` environment variables
+1. Make sure docker is installed and running.
+2. Generate Telegram app id and hash via [telegram API development tools](https://my.telegram.org/apps)
+3. Generate OpenAI api key using [OpenAI API platform](https://platform.openai.com/api-keys)
+4. Configure the ```APP_ID```, ```APP_HASH``` and ```OPENAI_API_KEY``` environment variables.
 
-### OpenAI API
-Create OpenAI API key in the [OpenAI API platform](https://platform.openai.com/api-keys) and set the OPENAI_API_KEY environment variable
-
+Run the following command:
 ```bash
 docker compose up -d
 ```
-Access the frontend via 
+Access the frontend via ```http://localhost:5173/```
 
 ### Stop the Services
 To stop and remove the containers:
