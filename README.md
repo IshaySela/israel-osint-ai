@@ -2,7 +2,7 @@
 
 This project aims to ingest, process, and visualize OSINT data from various sources (Telegram, RSS, Web Scraping) in a unified map-based interface.
 
-[Example Photo](./static/example.jpg.jpg)
+![Example Photo](./static/example.jpg.jpg)
 
 ## Why
 The main intent of the project is to create a fully working product using various technologies from end to end.
