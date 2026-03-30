@@ -33,6 +33,13 @@ docker compose down
 ```
 
 ## Project Architecture
+The project is comprised of 4 layers:
+
+- **Ingestion Layer** - Ingest data form various sources and publish to RabbitMQ
+- **Processing Layer** - Listen to raw events from the queue and extract info (geocode, AI sumamry, etc.) and index to ES
+- **Backend for Frontend** - Provide API for the frontend to view the data
+- **Frontend** - User interface for the end user.
+ 
 Refer to [ARCHITECTURE.md](ARCHITECTURE.md) for more details.
 
 ## Roadmap
