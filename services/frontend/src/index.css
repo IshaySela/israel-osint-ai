@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-950: #0d1117;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-sky-400: #38bdf8;
+  --color-blue-500: #3b82f6;
+}
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0d1117;
+}
+
+/* Custom scrollbar for the sidebar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.1);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(34, 211, 238, 0.2);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 211, 238, 0.4);
+}
+
+/* Leaflet specific overrides */
+.leaflet-container {
+  background: #0d1117 !important;
+}
+
+.custom-popup .leaflet-popup-content-wrapper {
+  background: rgba(13, 17, 23, 0.9);
+  color: #fff;
+  border: 1px solid rgba(34, 211, 238, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.custom-popup .leaflet-popup-tip {
+  background: rgba(13, 17, 23, 0.9);
+  border: 1px solid rgba(34, 211, 238, 0.3);
+}
