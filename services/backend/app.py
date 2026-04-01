@@ -13,7 +13,6 @@ from loguru import logger
 from shared.MessageBroker import MessageBroker
 from sse_starlette.sse import EventSourceResponse
 
-# Initialize FastAPI app
 app = FastAPI()
 
 app.add_middleware(
@@ -51,11 +50,11 @@ async def events_stream(request: Request) -> EventSourceResponse:
         async def callback(event_data: Dict[str, Any]) -> None:
             await queue.put(event_data)
 
-        # Start listening in the background
+        # Start listening for msgs in the background
         listen_task = asyncio.create_task(
             broker.listen_async(
                 exchange=cfg.processed_events_exchange,
-                queue_name="", # Exclusive queue
+                queue_name="",
                 callback=callback
             )
         )
