@@ -82,3 +82,20 @@ func (rl *RabbitClient) Listen(action func(models.RawOsintEvent)) error {
 
 	return nil
 }
+
+func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte) error {
+	if rl.channel == nil {
+		return errors.New("Failed to publish message, the function was called before creating the channel")
+	}
+
+	return rl.channel.Publish(
+		exchange,
+		routingKey,
+		false, // mandatory
+		false, // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+}
