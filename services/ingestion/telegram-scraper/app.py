@@ -5,7 +5,7 @@ from loguru import logger
 from services.Configuration import TelegramScraperConfig
 from telethon import TelegramClient, events
 from telethon.types import Message, Chat
-from services.MessageBroker import MessageBroker
+from shared.MessageBroker import MessageBroker
 from services.ClassifyTelegramMessage import classify_telegram_msg
 
 setup_logging()

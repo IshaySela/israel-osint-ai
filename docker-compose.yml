@@ -52,13 +52,15 @@ services:
 
   backend:
     build:
-      context: ./services/backend
-      dockerfile: Dockerfile.dev
+      context: ./services
+      dockerfile: ./backend/Dockerfile.dev
     container_name: backend
     ports:
       - "5000:5000"
     volumes:
       - ./services/backend:/app
+    env_file:
+      - ./services/backend/.env
     environment:
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
       - HOST=0.0.0.0
@@ -67,7 +69,7 @@ services:
         condition: service_healthy
     networks:
       - osint_network
-
+    
   frontend:
     build:
       context: ./services/frontend
@@ -106,8 +108,8 @@ services:
 
   telegram-scraper:
     build:
-      context: ./services/ingestion/telegram-scraper
-      dockerfile: Dockerfile.dev
+      context: ./services
+      dockerfile: ./ingestion/telegram-scraper/Dockerfile.dev
     container_name: telegram-scraper
     volumes:
       - ./services/ingestion/telegram-scraper:/app
