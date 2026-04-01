@@ -106,8 +106,8 @@ services:
 
   telegram-scraper:
     build:
-      context: ./services/ingestion/telegram-scraper
-      dockerfile: Dockerfile.dev
+      context: ./services
+      dockerfile: ./ingestion/telegram-scraper/Dockerfile.dev
     container_name: telegram-scraper
     volumes:
       - ./services/ingestion/telegram-scraper:/app

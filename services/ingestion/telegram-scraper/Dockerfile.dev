@@ -6,8 +6,10 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt watchdog
+COPY /shared/python /app/services/shared/python
+RUN pip install /app/services/shared/python
+COPY /ingestion/telegram-scraper/requirements.txt .
+RUN pip install --no-cache-dir -r /app/requirements.txt watchdog
 
 COPY . .
 

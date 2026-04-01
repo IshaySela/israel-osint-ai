@@ -3,7 +3,6 @@ import json
 import time
 from typing import Optional, Dict, Any
 from loguru import logger
-from services.Configuration import TelegramScraperConfig
 from pika.exceptions import AMQPChannelError, AMQPConnectionError
 from pika.adapters.blocking_connection import BlockingChannel
 
