@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 	mb "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
@@ -13,12 +13,12 @@ import (
 
 type Processor struct {
 	Cfg      *config.Config
-	Geocoder *dataextraction.GeocodingService
+	Geocoder *de.GeocodingService
 	ESClient *storage.ElasticsearchClient
 	broker   *mb.RabbitClient
 }
 
-func NewProcessor(cfg *config.Config, geocoder *dataextraction.GeocodingService, esClient *storage.ElasticsearchClient, broker *mb.RabbitClient) *Processor {
+func NewProcessor(cfg *config.Config, geocoder *de.GeocodingService, esClient *storage.ElasticsearchClient, broker *mb.RabbitClient) *Processor {
 	return &Processor{
 		Cfg:      cfg,
 		Geocoder: geocoder,
@@ -29,7 +29,7 @@ func NewProcessor(cfg *config.Config, geocoder *dataextraction.GeocodingService,
 
 func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 	log.Printf("Processing event: %s\n", string(event.Text))
-	result, err := dataextraction.CreateAgentSummary(event, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
+	result, err := de.CreateAgentSummary(event, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
 
 	if err != nil {
 		log.Printf("Error extracting info: %v\n", err)
