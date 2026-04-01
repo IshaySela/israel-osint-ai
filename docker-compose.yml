@@ -50,6 +50,17 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: redis
+    networks:
+      - osint_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   backend:
     build:
       context: ./services
@@ -61,13 +72,16 @@ services:
       - ./services/backend:/app
     environment:
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
+      - REDIS_URL=redis://redis:6379/0
       - HOST=0.0.0.0
     depends_on:
       elasticsearch:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - osint_network
-
+    
   frontend:
     build:
       context: ./services/frontend
