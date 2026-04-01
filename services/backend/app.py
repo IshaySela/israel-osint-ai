@@ -7,10 +7,14 @@ from typing import Any, Dict, List, Tuple, Union, Optional
 from elasticsearch_client import get_es_client, ESClient
 from config import get_config, Config
 from loguru import logger
-import sys
+from flask_sse import sse
+from shared.MessageBroker import MessageBroker
+import asyncio
+import threading
 
 # Initialize Flask app
 app: Flask = Flask(__name__)
+app.register_blueprint(sse, url_prefix='/events-stream')
 CORS(app)
 
 # Load GraphQL schema with absolute path
@@ -18,6 +22,12 @@ BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 schema_path: str = os.path.join(BASE_DIR, "schema.graphql")
 type_defs: str = load_schema_from_path(schema_path)
 query: QueryType = QueryType()
+cfg: Config = get_config()
+
+broker = MessageBroker(rabbit_host=cfg.rabbitmq_host, rabbit_queue="")
+
+async def publish_events_to_clients(ev: Dict[str, Any]) -> None:
+    pass
 
 @query.field("latestEvents")
 def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:
@@ -26,6 +36,7 @@ def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:
 
 schema: Any = make_executable_schema(type_defs, query)
 explorer: ExplorerGraphiQL = ExplorerGraphiQL()
+
 
 @app.route("/graphql", methods=["GET"])
 def graphql_playground() -> Union[str, Tuple[str, int]]:
@@ -43,7 +54,24 @@ def graphql_server() -> Tuple[Response, int]:
     status_code: int = 200 if success else 400
     return jsonify(result), status_code
 
-if __name__ == "__main__":
-    cfg: Config = get_config()
+async def main():
     logger.info(f"Starting BFF on {cfg.host}:{cfg.port} (debug={cfg.debug}), elasticsearch={cfg.elasticsearch_urls}")
-    app.run(host=cfg.host, port=cfg.port, debug=cfg.debug)
+    broker_task = asyncio.create_task(broker.listen_async(cfg.processed_events_exchange,"", publish_events_to_clients))
+    
+    flask_thread = threading.Thread(
+        target=app.run, 
+        kwargs={"host": cfg.host, "port": cfg.port, "debug": False}
+    )
+    
+    flask_thread.start()
+    
+    try:
+        await asyncio.gather(broker_task)
+    except asyncio.CancelledError:
+        logger.info("Shutting down...")
+    finally:
+        broker_task.cancel()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
