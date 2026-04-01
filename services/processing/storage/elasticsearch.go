@@ -33,7 +33,7 @@ func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	if err != nil {
 		return fmt.Errorf("error creating the elasticsearch client: %w", err)
 	}
-	_, err = esc.client.Ping().Do(context.TODO())
+	_, err = client.Ping().Do(context.TODO())
 
 	if err != nil {
 		return fmt.Errorf("Error connecting to elasticsearch: %w", err)
