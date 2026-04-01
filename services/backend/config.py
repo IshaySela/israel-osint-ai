@@ -14,7 +14,6 @@ class Config:
     debug: bool
     rabbitmq_host: str
     processed_events_exchange: str
-    redis_url: str
     
     def __new__(cls: Type['Config']) -> 'Config':
         with cls._lock:
@@ -28,7 +27,6 @@ class Config:
                 cls._instance.debug = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
                 cls._instance.rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
                 cls._instance.processed_events_exchange = os.getenv("PROCESSED_EVENTS_EXCHANGE", "processed_events")
-                cls._instance.redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
         return cls._instance
 
 def get_config() -> Config:
