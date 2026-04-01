@@ -64,6 +64,7 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 	} else {
 		log.Println("Successfully indexed event to elasticsearch")
 	}
+
 }
 
 func (p *Processor) StartWorker(ctx context.Context, taskQueue <-chan models.RawOsintEvent) {

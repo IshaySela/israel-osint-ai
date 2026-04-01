@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -13,7 +12,7 @@ import (
 )
 
 type ElasticsearchClient struct {
-	client *elasticsearch.Client
+	client *elasticsearch.TypedClient
 }
 
 type ProcessedEvent struct {
@@ -31,19 +30,14 @@ func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	cfg := elasticsearch.Config{
 		Addresses: addresses,
 	}
-	client, err := elasticsearch.NewClient(cfg)
+	client, err := elasticsearch.NewTypedClient(cfg)
 	if err != nil {
 		return fmt.Errorf("error creating the elasticsearch client: %w", err)
 	}
+	_, err = esc.client.Ping().Do(context.TODO())
 
-	res, err := client.Info()
 	if err != nil {
-		return fmt.Errorf("error getting elasticsearch info: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return fmt.Errorf("error response from elasticsearch: %s", res.String())
+		return fmt.Errorf("Error connecting to elasticsearch: %w", err)
 	}
 
 	esc.client = client
@@ -60,18 +54,13 @@ func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, ev
 		return fmt.Errorf("error marshaling event: %w", err)
 	}
 
-	res, err := esc.client.Index(
-		index,
-		bytes.NewReader(data),
-		esc.client.Index.WithContext(ctx),
-	)
-	if err != nil {
-		return fmt.Errorf("error indexing document: %w", err)
-	}
-	defer res.Body.Close()
+	_, err = esc.client.
+		Index(index).
+		Document(data).
+		Do(ctx)
 
-	if res.IsError() {
-		return fmt.Errorf("error indexing document in elasticsearch: %s", res.String())
+	if err != nil {
+		return fmt.Errorf("error indexing event to elasticsearch: %w", err)
 	}
 
 	return nil
@@ -92,23 +81,10 @@ func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, 
 		Timestamp:    time.Now().Format(time.RFC3339),
 	}
 
-	data, err := json.Marshal(cache)
-	if err != nil {
-		return fmt.Errorf("error marshaling geocode cache: %w", err)
-	}
+	_, err := esc.client.Index(index).Document(cache).Do(ctx)
 
-	res, err := esc.client.Index(
-		index,
-		bytes.NewReader(data),
-		esc.client.Index.WithContext(ctx),
-	)
 	if err != nil {
 		return fmt.Errorf("error indexing geocode cache: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return fmt.Errorf("error indexing geocode cache in elasticsearch: %s", res.String())
 	}
 
 	return nil
