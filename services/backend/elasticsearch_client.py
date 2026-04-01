@@ -40,7 +40,7 @@ class ESClient:
                     "timestamp": source.get("timestamp", ""),
                     "locations": formatted_locations
                 }
-                logger.debug(f"Formatted event: {event}")
+                
                 events.append(event)
             return events
         except Exception as e:
