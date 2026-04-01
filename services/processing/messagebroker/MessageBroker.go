@@ -1,10 +1,12 @@
 package messagebroker
 
 import (
+	"encoding/json"
 	"errors"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	"github.com/IshaySela/israel-osint-ai/services/processing/storage"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -109,4 +111,18 @@ func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte)
 	)
 }
 
-func (rl RabbitClient) PublishProcessedEvent()
+func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent, dbId string) error {
+	var msg = models.ProcessedEventMessage{
+		DbId:      dbId,
+		Summary:   ev.Summary,
+		Locations: ev.Locations,
+		Timestamp: ev.Timestamp,
+	}
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	return rl.Publish(rl.config.ProcessedEventsExchange, "", body)
+}

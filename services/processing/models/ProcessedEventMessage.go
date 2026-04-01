@@ -1,8 +1,8 @@
 package models
 
 type ProcessedEventMessage struct {
-	EsId      string
+	DbId      string             `json:"dbId"`
 	Summary   string             `json:"summary"`
 	Locations map[string]Geocode `json:"locations"`
-	Timestamp string
+	Timestamp string             `json:"timestamp"`
 }
