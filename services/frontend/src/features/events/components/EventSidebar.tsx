@@ -3,6 +3,7 @@ import { useQuery } from '@apollo/client/react';
 import { useDispatch, useSelector } from 'react-redux';
 import { GET_LATEST_EVENTS } from '../graphql/queries';
 import { setEvents } from '../store/eventSlice';
+import { useEventSSE } from '../hooks/useEventSSE';
 import type { RootState } from '../../../store';
 import EventCard from './EventCard';
 import GlassPanel from '../../../components/common/GlassPanel';
@@ -15,9 +16,10 @@ interface GetLatestEventsData {
 const EventSidebar: React.FC = () => {
   const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
-  const { loading, error, data } = useQuery<GetLatestEventsData>(GET_LATEST_EVENTS, {
-    pollInterval: 30000, // Poll every 30 seconds
-  });
+  const { loading, error, data } = useQuery<GetLatestEventsData>(GET_LATEST_EVENTS);
+
+  // Initialize SSE connection
+  useEventSSE();
 
   useEffect(() => {
     if (data && data.latestEvents) {
