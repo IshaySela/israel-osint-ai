@@ -3,26 +3,28 @@ package dataextraction
 import (
 	"log"
 	"sync"
+
+	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 )
 
-type GeocoderFunction func(string) (Geocode, *GeocodeError)
+type GeocoderFunction func(string) (models.Geocode, *GeocodeError)
 
 type GeocodingService struct {
 	mu       sync.RWMutex
-	cache    map[string]Geocode
+	cache    map[string]models.Geocode
 	geocoder GeocoderFunction
 }
 
 func NewGeocodingService(geocoder GeocoderFunction) *GeocodingService {
 	return &GeocodingService{
-		cache:    make(map[string]Geocode),
+		cache:    make(map[string]models.Geocode),
 		geocoder: geocoder,
 	}
 }
 
-func (s *GeocodingService) GetCoordinate(location string) (Geocode, *GeocodeError) {
+func (s *GeocodingService) GetCoordinate(location string) (models.Geocode, *GeocodeError) {
 	if location == "" {
-		return Geocode{}, NewGeocodeError(ErrCodeInvalidRequest, "location string cannot be empty", nil)
+		return models.Geocode{}, NewGeocodeError(ErrCodeInvalidRequest, "location string cannot be empty", nil)
 	}
 
 	s.mu.RLock()
@@ -35,7 +37,7 @@ func (s *GeocodingService) GetCoordinate(location string) (Geocode, *GeocodeErro
 
 	geocode, err := s.geocoder(location)
 	if err != nil {
-		return Geocode{}, err
+		return models.Geocode{}, err
 	}
 
 	s.mu.Lock()
@@ -45,12 +47,12 @@ func (s *GeocodingService) GetCoordinate(location string) (Geocode, *GeocodeErro
 	return geocode, nil
 }
 
-func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]Geocode, *GeocodeError) {
+func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]models.Geocode, *GeocodeError) {
 	if len(locations) == 0 {
 		return nil, NewGeocodeError(ErrCodeInvalidRequest, "locations list cannot be empty", nil)
 	}
 
-	results := make(map[string]Geocode)
+	results := make(map[string]models.Geocode)
 
 	for _, location := range locations {
 		if location == "" {

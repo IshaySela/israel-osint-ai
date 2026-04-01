@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/elastic/go-elasticsearch/v8"
 )
@@ -18,10 +17,10 @@ type ElasticsearchClient struct {
 }
 
 type ProcessedEvent struct {
-	RawMessage string                `json:"raw_message"`
-	Summary    string                `json:"summary"`
-	Locations  map[string]de.Geocode `json:"locations"`
-	Timestamp  string                `json:"timestamp"`
+	RawMessage string                    `json:"raw_message"`
+	Summary    string                    `json:"summary"`
+	Locations  map[string]models.Geocode `json:"locations"`
+	Timestamp  string                    `json:"timestamp"`
 }
 
 func NewElasticsearchClient() *ElasticsearchClient {
@@ -78,7 +77,7 @@ func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, ev
 	return nil
 }
 
-func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, locationText string, geocode de.Geocode) error {
+func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, locationText string, geocode models.Geocode) error {
 	if esc.client == nil {
 		return fmt.Errorf("elasticsearch client not initialized, call Setup first")
 	}

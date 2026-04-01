@@ -25,7 +25,7 @@ func main() {
 	log.Println("Starting message broker...")
 	ctx := context.Background()
 
-	geocoder := de.NewGeocodingService(func(location string) (de.Geocode, *de.GeocodeError) {
+	geocoder := de.NewGeocodingService(func(location string) (models.Geocode, *de.GeocodeError) {
 		return nominatim.NominatimSearch(location, rateLimiter)
 	})
 

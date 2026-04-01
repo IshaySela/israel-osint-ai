@@ -30,6 +30,16 @@ func (rl *RabbitClient) setup() error {
 	if err != nil {
 		return errors.New("failed to open channel to rabbitmq host")
 	}
+
+	err = ch.ExchangeDeclare(rl.config.ProcessedEventsExchange,
+		"fanout",
+		true, // durable
+		false, false, false, nil)
+
+	if err != nil {
+		return err
+	}
+
 	q, err := ch.QueueDeclare(
 		rl.config.RabbitMQQueue, // name
 		false,                   // durable
@@ -98,3 +108,5 @@ func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte)
 		},
 	)
 }
+
+func (rl RabbitClient) PublishProcessedEvent()
