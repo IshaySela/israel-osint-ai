@@ -45,7 +45,7 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 	}
 
 	for loc, geo := range locationMap {
-		err := p.ESClient.IndexGeocode(ctx, p.Cfg.ElasticsearchGeocodeIndex, loc, geo)
+		err, _ := p.ESClient.IndexGeocode(ctx, p.Cfg.ElasticsearchGeocodeIndex, loc, geo)
 		if err != nil {
 			log.Printf("Error indexing geocode for %s: %v\n", loc, err)
 		}
@@ -58,7 +58,7 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 		Timestamp:  event.Date,
 	}
 
-	err = p.ESClient.IndexEvent(ctx, p.Cfg.ElasticsearchIndex, processedEvent)
+	err, _ = p.ESClient.IndexEvent(ctx, p.Cfg.ElasticsearchIndex, processedEvent)
 	if err != nil {
 		log.Printf("Error indexing event to elasticsearch: %v\n", err)
 	} else {

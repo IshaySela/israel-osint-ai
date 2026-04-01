@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -44,31 +43,26 @@ func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	return nil
 }
 
-func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, event ProcessedEvent) error {
+func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, event ProcessedEvent) (error, string) {
 	if esc.client == nil {
-		return fmt.Errorf("elasticsearch client not initialized, call Setup first")
+		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
 
-	data, err := json.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("error marshaling event: %w", err)
-	}
-
-	_, err = esc.client.
+	res, err := esc.client.
 		Index(index).
-		Document(data).
+		Document(event).
 		Do(ctx)
 
 	if err != nil {
-		return fmt.Errorf("error indexing event to elasticsearch: %w", err)
+		return fmt.Errorf("error indexing event to elasticsearch: %w", err), ""
 	}
 
-	return nil
+	return nil, res.Id_
 }
 
-func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, locationText string, geocode models.Geocode) error {
+func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, locationText string, geocode models.Geocode) (error, string) {
 	if esc.client == nil {
-		return fmt.Errorf("elasticsearch client not initialized, call Setup first")
+		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
 
 	lat, _ := strconv.ParseFloat(geocode.Lat, 64)
@@ -81,11 +75,11 @@ func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, 
 		Timestamp:    time.Now().Format(time.RFC3339),
 	}
 
-	_, err := esc.client.Index(index).Document(cache).Do(ctx)
+	res, err := esc.client.Index(index).Document(cache).Do(ctx)
 
 	if err != nil {
-		return fmt.Errorf("error indexing geocode cache: %w", err)
+		return fmt.Errorf("error indexing geocode cache: %w", err), ""
 	}
 
-	return nil
+	return nil, res.Id_
 }
