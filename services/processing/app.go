@@ -20,12 +20,12 @@ func main() {
 	cfg := config.LoadConfig()
 	var wg sync.WaitGroup
 	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
-	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
+	broker := MessageQueue.NewRabbitListener(cfg)
 
 	log.Println("Starting message broker...")
 	ctx := context.Background()
 
-	geocoder := de.NewGeocodingService(func(location string) (de.Geocode, *de.GeocodeError) {
+	geocoder := de.NewGeocodingService(func(location string) (models.Geocode, *de.GeocodeError) {
 		return nominatim.NominatimSearch(location, rateLimiter)
 	})
 
@@ -35,7 +35,7 @@ func main() {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
 	}
 
-	proc := processor.NewProcessor(cfg, geocoder, esClient)
+	proc := processor.NewProcessor(cfg, geocoder, esClient, &broker)
 	taskQueue := make(chan models.RawOsintEvent, 100)
 
 	log.Printf("Starting %d workers...\n", cfg.WorkerCount)

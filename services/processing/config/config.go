@@ -19,6 +19,7 @@ type Config struct {
 	OpenAIKey                 string
 	OpenAIModel               string
 	WorkerCount               int
+	ProcessedEventsExchange   string
 }
 
 var (
@@ -42,6 +43,7 @@ func LoadConfig() *Config {
 			OpenAIKey:                 getEnv("OPENAI_API_KEY", ""),
 			OpenAIModel:               getEnv("OPENAI_MODEL", "gpt-5-mini"),
 			WorkerCount:               getEnvInt("WORKER_COUNT", 5),
+			ProcessedEventsExchange:   getEnv("PROCESSED_EVENTS_EXCHANGE", "processed_events"),
 		}
 	})
 

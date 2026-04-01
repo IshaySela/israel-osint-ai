@@ -1,26 +1,28 @@
 package messagebroker
 
 import (
+	"encoding/json"
 	"errors"
 
+	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	"github.com/IshaySela/israel-osint-ai/services/processing/storage"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type RabbitListener struct {
-	Url       string
-	QueueName string
-	conn      *amqp.Connection
-	channel   *amqp.Channel
-	queue     *amqp.Queue
+type RabbitClient struct {
+	conn    *amqp.Connection
+	channel *amqp.Channel
+	queue   *amqp.Queue
+	config  *config.Config
 }
 
-func NewRabbitListener(url, queue string) RabbitListener {
-	return RabbitListener{Url: url, QueueName: queue}
+func NewRabbitListener(config *config.Config) RabbitClient {
+	return RabbitClient{config: config}
 }
 
-func (rl *RabbitListener) setup() error {
-	conn, err := amqp.Dial(rl.Url)
+func (rl *RabbitClient) setup() error {
+	conn, err := amqp.Dial(rl.config.RabbitMQURL)
 	if err != nil {
 		return errors.New("failed to establish connection to rabbitmq host")
 	}
@@ -31,13 +33,22 @@ func (rl *RabbitListener) setup() error {
 		return errors.New("failed to open channel to rabbitmq host")
 	}
 
+	err = ch.ExchangeDeclare(rl.config.ProcessedEventsExchange,
+		"fanout",
+		true, // durable
+		false, false, false, nil)
+
+	if err != nil {
+		return err
+	}
+
 	q, err := ch.QueueDeclare(
-		rl.QueueName, // name
-		false,        // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		rl.config.RabbitMQQueue, // name
+		false,                   // durable
+		false,                   // delete when unused
+		false,                   // exclusive
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 
 	if err != nil {
@@ -49,7 +60,7 @@ func (rl *RabbitListener) setup() error {
 	return nil
 }
 
-func (rl *RabbitListener) Listen(action func(models.RawOsintEvent)) error {
+func (rl *RabbitClient) Listen(action func(models.RawOsintEvent)) error {
 
 	if err := rl.setup(); err != nil {
 		return err
@@ -81,4 +92,37 @@ func (rl *RabbitListener) Listen(action func(models.RawOsintEvent)) error {
 	}()
 
 	return nil
+}
+
+func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte) error {
+	if rl.channel == nil {
+		return errors.New("Failed to publish message, the function was called before creating the channel")
+	}
+
+	return rl.channel.Publish(
+		exchange,
+		routingKey,
+		false, // mandatory
+		false, // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+}
+
+func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent, dbId string) error {
+	var msg = models.ProcessedEventMessage{
+		DbId:      dbId,
+		Summary:   ev.Summary,
+		Locations: ev.Locations,
+		Timestamp: ev.Timestamp,
+	}
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	return rl.Publish(rl.config.ProcessedEventsExchange, "", body)
 }
