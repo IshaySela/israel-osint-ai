@@ -7,7 +7,7 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-type RabbitListener struct {
+type RabbitClient struct {
 	Url       string
 	QueueName string
 	conn      *amqp.Connection
@@ -15,11 +15,11 @@ type RabbitListener struct {
 	queue     *amqp.Queue
 }
 
-func NewRabbitListener(url, queue string) RabbitListener {
-	return RabbitListener{Url: url, QueueName: queue}
+func NewRabbitListener(url, queue string) RabbitClient {
+	return RabbitClient{Url: url, QueueName: queue}
 }
 
-func (rl *RabbitListener) setup() error {
+func (rl *RabbitClient) setup() error {
 	conn, err := amqp.Dial(rl.Url)
 	if err != nil {
 		return errors.New("failed to establish connection to rabbitmq host")
@@ -49,7 +49,7 @@ func (rl *RabbitListener) setup() error {
 	return nil
 }
 
-func (rl *RabbitListener) Listen(action func(models.RawOsintEvent)) error {
+func (rl *RabbitClient) Listen(action func(models.RawOsintEvent)) error {
 
 	if err := rl.setup(); err != nil {
 		return err

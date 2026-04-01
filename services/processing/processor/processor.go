@@ -15,10 +15,10 @@ type Processor struct {
 	Cfg      *config.Config
 	Geocoder *dataextraction.GeocodingService
 	ESClient *storage.ElasticsearchClient
-	broker   *mb.RabbitListener
+	broker   *mb.RabbitClient
 }
 
-func NewProcessor(cfg *config.Config, geocoder *dataextraction.GeocodingService, esClient *storage.ElasticsearchClient, broker *mb.RabbitListener) *Processor {
+func NewProcessor(cfg *config.Config, geocoder *dataextraction.GeocodingService, esClient *storage.ElasticsearchClient, broker *mb.RabbitClient) *Processor {
 	return &Processor{
 		Cfg:      cfg,
 		Geocoder: geocoder,
