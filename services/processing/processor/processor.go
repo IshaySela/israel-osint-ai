@@ -6,6 +6,7 @@ import (
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	dataextraction "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	mb "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
 )
@@ -14,13 +15,15 @@ type Processor struct {
 	Cfg      *config.Config
 	Geocoder *dataextraction.GeocodingService
 	ESClient *storage.ElasticsearchClient
+	broker   *mb.RabbitListener
 }
 
-func NewProcessor(cfg *config.Config, geocoder *dataextraction.GeocodingService, esClient *storage.ElasticsearchClient) *Processor {
+func NewProcessor(cfg *config.Config, geocoder *dataextraction.GeocodingService, esClient *storage.ElasticsearchClient, broker *mb.RabbitListener) *Processor {
 	return &Processor{
 		Cfg:      cfg,
 		Geocoder: geocoder,
 		ESClient: esClient,
+		broker:   broker,
 	}
 }
 

@@ -35,7 +35,7 @@ func main() {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
 	}
 
-	proc := processor.NewProcessor(cfg, geocoder, esClient)
+	proc := processor.NewProcessor(cfg, geocoder, esClient, &broker)
 	taskQueue := make(chan models.RawOsintEvent, 100)
 
 	log.Printf("Starting %d workers...\n", cfg.WorkerCount)
