@@ -102,10 +102,13 @@ class MessageBroker:
                                 try:
                                     event_data = json.loads(message.body.decode())
                                     await callback(event_data)
+                                    await message.ack()
                                 except json.JSONDecodeError:
                                     logger.error(f"Failed to decode message body: {message.body!r}")
+                                    await message.nack(requeue=False)
                                 except Exception as e:
                                     logger.error(f"Error in async callback: {e}")
+                                    await message.nack(requeue=False)
             except Exception as e:
                 retries += 1
                 logger.warning(f"Async connection to RabbitMQ failed ({e}), retrying in {self.retry_delay}s ({retries}/{self.max_retries})...")
