@@ -89,25 +89,31 @@ class MessageBroker:
                     if exchange:
                         await channel.declare_exchange(exchange, aio_pika.ExchangeType.FANOUT, durable=True)
                     
-                    queue = await channel.declare_queue(queue_name, durable=True)
+                    # For empty queue_name, use non-durable, auto-delete, exclusive
+                    is_exclusive = not queue_name
+                    queue = await channel.declare_queue(
+                        queue_name, 
+                        durable=not is_exclusive,
+                        auto_delete=is_exclusive,
+                        exclusive=is_exclusive
+                    )
                     
                     if exchange:
                         await queue.bind(exchange, routing_key="#")
                     
-                    logger.info(f"Waiting for messages in {queue_name}...")
+                    logger.info(f"Waiting for messages in {queue.name}...")
                     async with queue.iterator() as queue_iter:
                         async for message in queue_iter:
                             async with message.process():
                                 try:
                                     event_data = json.loads(message.body.decode())
                                     await callback(event_data)
-                                    await message.ack()
                                 except json.JSONDecodeError:
                                     logger.error(f"Failed to decode message body: {message.body!r}")
-                                    await message.nack(requeue=False)
                                 except Exception as e:
                                     logger.error(f"Error in async callback: {e}")
-                                    await message.nack(requeue=False)
+                                    # message.process() will handle nack if exception is raised
+                                    raise
             except Exception as e:
                 retries += 1
                 logger.warning(f"Async connection to RabbitMQ failed ({e}), retrying in {self.retry_delay}s ({retries}/{self.max_retries})...")

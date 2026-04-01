@@ -1,35 +1,36 @@
 import os
-from flask import Flask, request, jsonify, Response
-from flask_cors import CORS
-from ariadne import load_schema_from_path, make_executable_schema, graphql_sync, QueryType, EnumType
-from ariadne.explorer import ExplorerGraphiQL
-from typing import Any, Dict, List, Tuple, Union, Optional
+import asyncio
+import json
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from ariadne.asgi import GraphQL
+from ariadne import load_schema_from_path, make_executable_schema, QueryType
+from typing import Any, Dict, List, Optional, AsyncGenerator
 from elasticsearch_client import get_es_client, ESClient
 from config import get_config, Config
 from loguru import logger
-from flask_sse import sse
 from shared.MessageBroker import MessageBroker
-import asyncio
-from models.ProcessedMessageEvent import ProcessedEventMessage
+from sse_starlette.sse import EventSourceResponse
 
-# Initialize Flask app
-app: Flask = Flask(__name__)
-app.register_blueprint(sse, url_prefix='/events-stream')
-CORS(app)
+# Initialize FastAPI app
+app = FastAPI()
 
-# Load GraphQL schema with absolute path
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+cfg: Config = get_config()
+
+# Load GraphQL schema
 BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 schema_path: str = os.path.join(BASE_DIR, "schema.graphql")
 type_defs: str = load_schema_from_path(schema_path)
 query: QueryType = QueryType()
-cfg: Config = get_config()
-
-broker = MessageBroker(rabbit_host=cfg.rabbitmq_host, rabbit_queue="")
-
-async def publish_events_to_clients(msg: Dict[str, Any]) -> None:
-    ev = ProcessedEventMessage.model_validate(msg)
-    sse.publish(ev,type="new_event")
-    
 
 @query.field("latestEvents")
 def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:
@@ -37,39 +38,60 @@ def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:
     return es.get_latest_events(size=50)
 
 schema: Any = make_executable_schema(type_defs, query)
-explorer: ExplorerGraphiQL = ExplorerGraphiQL()
+graphql_app = GraphQL(schema, debug=cfg.debug)
 
+# Message Broker for SSE
+broker = MessageBroker(rabbit_host=cfg.rabbitmq_host, rabbit_queue="")
 
-@app.route("/graphql", methods=["GET"])
-def graphql_playground() -> Union[str, Tuple[str, int]]:
-    return explorer.html(None), 200
+@app.get("/events-stream")
+async def events_stream(request: Request) -> EventSourceResponse:
+    async def event_generator() -> AsyncGenerator[Dict[str, Any], None]:
+        queue = asyncio.Queue()
 
-@app.route("/graphql", methods=["POST"])
-def graphql_server() -> Tuple[Response, int]:
-    data: Optional[Dict[str, Any]] = request.get_json()
-    success, result = graphql_sync(
-        schema,
-        data,
-        context_value=request,
-        debug=app.debug
-    )
-    status_code: int = 200 if success else 400
-    return jsonify(result), status_code
+        async def callback(event_data: Dict[str, Any]) -> None:
+            await queue.put(event_data)
 
-async def main():
-    logger.info(f"Starting BFF on {cfg.host}:{cfg.port} (debug={cfg.debug}), elasticsearch={cfg.elasticsearch_urls}")
-    broker_task = asyncio.create_task(broker.listen_async(cfg.processed_events_exchange,"", publish_events_to_clients))
-    
-    flask_co = asyncio.to_thread(app.run, host=cfg.host, port=cfg.port, debug=False)
-    
-    
-    try:
-        await asyncio.gather(broker_task, flask_co)
-    except asyncio.CancelledError:
-        logger.info("Shutting down...")
-    finally:
-        broker_task.cancel()
+        # Start listening in the background
+        listen_task = asyncio.create_task(
+            broker.listen_async(
+                exchange=cfg.processed_events_exchange,
+                queue_name="", # Exclusive queue
+                callback=callback
+            )
+        )
+
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                
+                try:
+                    # Wait for a message with a timeout to check for disconnection
+                    event_data = await asyncio.wait_for(queue.get(), timeout=1.0)
+                    yield {
+                        "data": json.dumps(event_data),
+                        "event": "message"
+                    }
+                except asyncio.TimeoutError:
+                    continue
+        finally:
+            listen_task.cancel()
+            try:
+                await listen_task
+            except asyncio.CancelledError:
+                pass
+
+    return EventSourceResponse(event_generator())
+
+@app.post("/graphql")
+async def graphql_post(request: Request):
+    return await graphql_app.handle_request(request)
+
+@app.get("/graphql")
+async def graphql_get(request: Request):
+    return await graphql_app.handle_request(request)
 
 if __name__ == "__main__":
-    asyncio.run(main())
-
+    import uvicorn
+    logger.info(f"Starting FastAPI BFF on {cfg.host}:{cfg.port} (debug={cfg.debug}), elasticsearch={cfg.elasticsearch_urls}")
+    uvicorn.run(app, host=cfg.host, port=cfg.port)
