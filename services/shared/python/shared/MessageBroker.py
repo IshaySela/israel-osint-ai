@@ -87,7 +87,6 @@ class MessageBroker:
                     channel = await connection.channel()
                     
                     if exchange:
-                        # Using TOPIC exchange type by default for flexibility
                         await channel.declare_exchange(exchange, aio_pika.ExchangeType.TOPIC, durable=True)
                     
                     queue = await channel.declare_queue(queue_name, durable=True)

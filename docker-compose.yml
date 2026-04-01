@@ -52,8 +52,8 @@ services:
 
   backend:
     build:
-      context: ./services/backend
-      dockerfile: Dockerfile.dev
+      context: ./services
+      dockerfile: ./backend/Dockerfile.dev
     container_name: backend
     ports:
       - "5000:5000"

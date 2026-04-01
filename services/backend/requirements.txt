@@ -34,7 +34,6 @@ pydantic_core==2.41.5
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.2
 redis==7.4.0
--e git+https://github.com/IshaySela/israel-osint-ai@677eb14261d63ae6be99d326024769fa4a0643fe#egg=shared&subdirectory=services/shared/python
 six==1.17.0
 sniffio==1.3.1
 starlette==0.52.1

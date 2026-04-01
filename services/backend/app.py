@@ -11,6 +11,8 @@ from flask_sse import sse
 from shared.MessageBroker import MessageBroker
 import asyncio
 import threading
+import json
+from models.ProcessedMessageEvent import ProcessedEventMessage
 
 # Initialize Flask app
 app: Flask = Flask(__name__)
@@ -26,8 +28,10 @@ cfg: Config = get_config()
 
 broker = MessageBroker(rabbit_host=cfg.rabbitmq_host, rabbit_queue="")
 
-async def publish_events_to_clients(ev: Dict[str, Any]) -> None:
-    pass
+async def publish_events_to_clients(msg: Dict[str, Any]) -> None:
+    ev = ProcessedEventMessage.model_validate(msg)
+    sse.publish(ev,type="new_event")
+    
 
 @query.field("latestEvents")
 def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:

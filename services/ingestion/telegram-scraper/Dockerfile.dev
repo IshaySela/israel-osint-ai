@@ -11,6 +11,6 @@ RUN pip install /app/services/shared/python
 COPY /ingestion/telegram-scraper/requirements.txt .
 RUN pip install --no-cache-dir -r /app/requirements.txt watchdog
 
-COPY . .
+COPY /ingestion/telegram-scraper .
 
 CMD ["watchmedo", "auto-restart", "--pattern=*.py", "--recursive", "--", "python", "app.py"]
