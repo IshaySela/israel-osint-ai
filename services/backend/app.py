@@ -10,8 +10,6 @@ from loguru import logger
 from flask_sse import sse
 from shared.MessageBroker import MessageBroker
 import asyncio
-import threading
-import json
 from models.ProcessedMessageEvent import ProcessedEventMessage
 
 # Initialize Flask app

@@ -70,6 +70,8 @@ services:
       - "5000:5000"
     volumes:
       - ./services/backend:/app
+    env_file:
+      - ./services/backend/.env
     environment:
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
       - REDIS_URL=redis://redis:6379/0
