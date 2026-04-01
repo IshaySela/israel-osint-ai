@@ -3,24 +3,24 @@ package messagebroker
 import (
 	"errors"
 
+	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitClient struct {
-	Url       string
-	QueueName string
-	conn      *amqp.Connection
-	channel   *amqp.Channel
-	queue     *amqp.Queue
+	conn    *amqp.Connection
+	channel *amqp.Channel
+	queue   *amqp.Queue
+	config  *config.Config
 }
 
-func NewRabbitListener(url, queue string) RabbitClient {
-	return RabbitClient{Url: url, QueueName: queue}
+func NewRabbitListener(config *config.Config) RabbitClient {
+	return RabbitClient{config: config}
 }
 
 func (rl *RabbitClient) setup() error {
-	conn, err := amqp.Dial(rl.Url)
+	conn, err := amqp.Dial(rl.config.RabbitMQURL)
 	if err != nil {
 		return errors.New("failed to establish connection to rabbitmq host")
 	}
@@ -30,14 +30,13 @@ func (rl *RabbitClient) setup() error {
 	if err != nil {
 		return errors.New("failed to open channel to rabbitmq host")
 	}
-
 	q, err := ch.QueueDeclare(
-		rl.QueueName, // name
-		false,        // durable
-		false,        // delete when unused
-		false,        // exclusive
-		false,        // no-wait
-		nil,          // arguments
+		rl.config.RabbitMQQueue, // name
+		false,                   // durable
+		false,                   // delete when unused
+		false,                   // exclusive
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 
 	if err != nil {

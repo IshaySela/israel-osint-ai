@@ -20,7 +20,7 @@ func main() {
 	cfg := config.LoadConfig()
 	var wg sync.WaitGroup
 	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
-	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
+	broker := MessageQueue.NewRabbitListener(cfg)
 
 	log.Println("Starting message broker...")
 	ctx := context.Background()
