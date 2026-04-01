@@ -33,6 +33,15 @@ export const eventSlice = createSlice({
     setEvents: (state, action: PayloadAction<Event[]>) => {
       state.events = action.payload;
     },
+    addEvent: (state, action: PayloadAction<Event>) => {
+      // Check if event already exists to avoid duplicates
+      const exists = state.events.some(
+        (e) => e.timestamp === action.payload.timestamp && e.summary === action.payload.summary
+      );
+      if (!exists) {
+        state.events = [action.payload, ...state.events].slice(0, 100);
+      }
+    },
     setSelectedEvent: (state, action: PayloadAction<Event | null>) => {
       state.selectedEvent = action.payload;
     },
@@ -42,6 +51,6 @@ export const eventSlice = createSlice({
   },
 });
 
-export const { setEvents, setSelectedEvent, setSearchQuery } = eventSlice.actions;
+export const { setEvents, addEvent, setSelectedEvent, setSearchQuery } = eventSlice.actions;
 
 export default eventSlice.reducer;
