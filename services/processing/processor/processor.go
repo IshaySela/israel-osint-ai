@@ -58,13 +58,19 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 		Timestamp:  event.Date,
 	}
 
-	err, _ = p.ESClient.IndexEvent(ctx, p.Cfg.ElasticsearchIndex, processedEvent)
+	err, docId := p.ESClient.IndexEvent(ctx, p.Cfg.ElasticsearchIndex, processedEvent)
 	if err != nil {
 		log.Printf("Error indexing event to elasticsearch: %v\n", err)
-	} else {
-		log.Println("Successfully indexed event to elasticsearch")
+		return
 	}
 
+	log.Println("Successfully indexed event to elasticsearch")
+
+	err = p.broker.PublishProcessedEvent(processedEvent, docId)
+	if err != nil {
+		log.Printf("Error publishing processed events %v", err)
+	}
+	log.Printf("Published the processed events to %s", p.Cfg.ProcessedEventsExchange)
 }
 
 func (p *Processor) StartWorker(ctx context.Context, taskQueue <-chan models.RawOsintEvent) {
