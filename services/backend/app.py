@@ -62,15 +62,11 @@ async def main():
     logger.info(f"Starting BFF on {cfg.host}:{cfg.port} (debug={cfg.debug}), elasticsearch={cfg.elasticsearch_urls}")
     broker_task = asyncio.create_task(broker.listen_async(cfg.processed_events_exchange,"", publish_events_to_clients))
     
-    flask_thread = threading.Thread(
-        target=app.run, 
-        kwargs={"host": cfg.host, "port": cfg.port, "debug": False}
-    )
+    flask_co = asyncio.to_thread(app.run, host=cfg.host, port=cfg.port, debug=False)
     
-    flask_thread.start()
     
     try:
-        await asyncio.gather(broker_task)
+        await asyncio.gather(broker_task, flask_co)
     except asyncio.CancelledError:
         logger.info("Shutting down...")
     finally:

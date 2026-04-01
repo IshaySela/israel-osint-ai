@@ -25,7 +25,7 @@ class Config:
                 cls._instance.port = int(os.getenv("PORT", "5000"))
                 cls._instance.host = os.getenv("HOST", "127.0.0.1")
                 cls._instance.debug = os.getenv("DEBUG", "False").lower() in ("true", "1", "t")
-                cls._instance.rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
+                cls._instance.rabbitmq_host = os.getenv("RABBITMQ_HOST", "localhost")
                 cls._instance.processed_events_exchange = os.getenv("PROCESSED_EVENTS_EXCHANGE", "processed_events")
         return cls._instance
 
