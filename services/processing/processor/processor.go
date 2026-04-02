@@ -51,10 +51,19 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 		}
 	}
 
+	var locations []models.Location
+	for name, geo := range locationMap {
+		locations = append(locations, models.Location{
+			Name: name,
+			Lat:  geo.Lat,
+			Lon:  geo.Lon,
+		})
+	}
+
 	processedEvent := storage.ProcessedEvent{
 		RawMessage: event.Text,
 		Summary:    result.HeSummary,
-		Locations:  locationMap,
+		Locations:  locations,
 		Timestamp:  event.Date,
 	}
 

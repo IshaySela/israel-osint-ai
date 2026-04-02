@@ -27,18 +27,11 @@ class ESClient:
             for hit in hits:
                 source: Dict[str, Any] = hit.get('_source', {})
                 
-                # Transform locations dictionary to list of objects
-                raw_locations: Dict[str, Dict[str, str]] = source.get('locations', {})
-                formatted_locations: List[Dict[str, str]] = [
-                    {"name": name, "lat": str(loc.get("lat", "")), "lon": str(loc.get("lon", ""))}
-                    for name, loc in raw_locations.items()
-                ]
-                
                 event: Dict[str, Any] = {
                     "raw_message": source.get("raw_message", ""),
                     "summary": source.get("summary", ""),
                     "timestamp": source.get("timestamp", ""),
-                    "locations": formatted_locations
+                    "locations": source.get("locations", [])
                 }
                 
                 events.append(event)

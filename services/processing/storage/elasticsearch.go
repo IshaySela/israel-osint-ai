@@ -15,10 +15,10 @@ type ElasticsearchClient struct {
 }
 
 type ProcessedEvent struct {
-	RawMessage string                    `json:"raw_message"`
-	Summary    string                    `json:"summary"`
-	Locations  map[string]models.Geocode `json:"locations"`
-	Timestamp  string                    `json:"timestamp"`
+	RawMessage string            `json:"raw_message"`
+	Summary    string            `json:"summary"`
+	Locations  []models.Location `json:"locations"`
+	Timestamp  string            `json:"timestamp"`
 }
 
 func NewElasticsearchClient() *ElasticsearchClient {
