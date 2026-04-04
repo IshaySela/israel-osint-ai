@@ -7,6 +7,7 @@ import (
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	"github.com/IshaySela/israel-osint-ai/services/processing/workerpool"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -15,10 +16,11 @@ type RabbitClient struct {
 	channel *amqp.Channel
 	queue   *amqp.Queue
 	config  *config.Config
+	pool    *workerpool.WorkerPool
 }
 
-func NewRabbitListener(config *config.Config) RabbitClient {
-	return RabbitClient{config: config}
+func NewRabbitClient(config *config.Config, pool *workerpool.WorkerPool) RabbitClient {
+	return RabbitClient{config: config, pool: pool}
 }
 
 func (rl *RabbitClient) setup() error {
@@ -60,7 +62,7 @@ func (rl *RabbitClient) setup() error {
 	return nil
 }
 
-func (rl *RabbitClient) Listen(action func(models.RawOsintEvent)) error {
+func (rl *RabbitClient) ListenForRawEvents() error {
 
 	if err := rl.setup(); err != nil {
 		return err
@@ -87,7 +89,7 @@ func (rl *RabbitClient) Listen(action func(models.RawOsintEvent)) error {
 			if err != nil {
 				continue
 			}
-			action(event)
+			rl.pool.Submit(event)
 		}
 	}()
 
