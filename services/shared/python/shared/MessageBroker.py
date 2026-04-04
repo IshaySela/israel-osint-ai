@@ -10,18 +10,19 @@ class MessageBroker:
     """The class MessageBroker abstract the impl details, optimzations etc. for directly working with
     the message broker and provides a simple declartive API specific to this project.
     """
-    def __init__(self, rabbit_host: str, rabbit_queue: str) -> None:
+    def __init__(self, rabbit_host: str, rabbit_queue: str, raw_events_exchange: str = "raw_events") -> None:
         self.rabbit_host = rabbit_host
         self.rabbit_queue = rabbit_queue
         self.connection = None
         self.is_connected = False
+        self.raw_events_exchange = raw_events_exchange
 
     async def connect_async(self):
         """Establishes a robust async connection to RabbitMQ."""
         self.connection = await aio_pika.connect_robust(host=self.rabbit_host)
         self.is_connected = True
 
-    async def publish_event_async(self, event_data: Dict[str, Any]) -> None:
+    async def publish_raw_event_async(self, event_data: Dict[str, Any]) -> None:
         """Publishes a JSON-serialized event to the default queue.
 
         Args:
@@ -35,8 +36,9 @@ class MessageBroker:
 
         channel = await self.connection.channel()
         async with channel:
+            exchange = await channel.get_exchange(self.raw_events_exchange)
             msg = aio_pika.Message(json.dumps(event_data).encode())
-            await channel.default_exchange.publish(msg, routing_key=self.rabbit_queue)
+            await exchange.publish(msg, routing_key=self.rabbit_queue)
             
 
     async def _listen_async(self,
@@ -70,7 +72,8 @@ class MessageBroker:
 
         channel = await self.connection.channel()
         async with channel:
-            await self._listen_async(channel.default_exchange, callback, queue_name=self.rabbit_queue)
+            exchange = await channel.get_exchange(self.raw_events_exchange)
+            await self._listen_async(exchange, callback, queue_name="")
 
     async def listen_processed_events_async(self,
                                             exchange_name: str,

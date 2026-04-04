@@ -42,7 +42,7 @@ async def handler(event: events.NewMessage.Event):
             'date': str(msg.date)
         }
         print(broker.connection)
-        await broker.publish_event_async(event_data)
+        await broker.publish_raw_event_async(event_data)
         logger.info(f"Published event: {event_type} {text[:30]}")
     
 async def main():
