@@ -12,8 +12,15 @@ from config import get_config, Config
 from loguru import logger
 from shared.MessageBroker import MessageBroker
 from sse_starlette.sse import EventSourceResponse
+from contextlib import asynccontextmanager
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(fastAPI: FastAPI):
+    await broker.connect_async()
+    logger.info("Connected to rabbitmq")
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,10 +49,6 @@ graphql_app = GraphQL(schema, debug=cfg.debug)
 # Message Broker for SSE
 broker = MessageBroker(rabbit_host=cfg.rabbitmq_host, rabbit_queue="")
 
-@app.on_event("startup")
-async def startup():
-    await broker.connect_async()
-
 @app.get("/events-stream")
 async def events_stream(request: Request) -> EventSourceResponse:
     async def event_generator() -> AsyncGenerator[Dict[str, Any], None]:
@@ -53,16 +56,18 @@ async def events_stream(request: Request) -> EventSourceResponse:
 
         async def callback(event_data: Dict[str, Any]) -> None:
             await queue.put(event_data)
-
-        # Start listening for msgs in the background
-        listen_task = asyncio.create_task(
-            broker.listen_async(
+        
+        async def listener():
+            logger.info("Start to listen for incoming events...")
+            await broker.listen_async(
                 queu_name="",
                 routing_key="#",
                 callback=callback,
                 exchange_name=cfg.processed_events_exchange
             )
-        )
+        
+        # Start listening for msgs in the background
+        listen_task = asyncio.create_task(listener())
 
         try:
             while True:

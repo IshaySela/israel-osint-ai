@@ -59,7 +59,7 @@ services:
       - "5000:5000"
     volumes:
       - ./services/backend:/app
-      - ./services/shared/python:/app
+      - ./services/shared/python:/app/services/shared/python
     env_file:
       - ./services/backend/.env
     environment:
@@ -114,6 +114,7 @@ services:
     container_name: telegram-scraper
     volumes:
       - ./services/ingestion/telegram-scraper:/app
+      - ./services/shared/python:/app/services/shared/python
     env_file:
       - ./services/ingestion/telegram-scraper/.env
     environment:

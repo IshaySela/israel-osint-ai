@@ -39,7 +39,11 @@ class MessageBroker:
             await channel.default_exchange.publish(msg, routing_key=self.rabbit_queue)
             
 
-    async def listen_async(self, queu_name: str, routing_key: str, callback: Callable[[Dict[str, Any]], Awaitable[None]], exchange_name: str = '/') -> None:
+    async def listen_async(self,
+                           queu_name: str,
+                           routing_key: str,
+                           callback: Callable[[Dict[str, Any]],Awaitable[None]],
+                           exchange_name: str) -> None:
         """Binds a queue to an exchange and consumes messages indefinitely.
 
         Declares the queue (auto-delete) and optionally binds it to a named
@@ -65,10 +69,7 @@ class MessageBroker:
         async with channel:
             queue = await channel.declare_queue(name=queu_name, auto_delete=True)
                 
-            exchange = channel.default_exchange
-            
-            if exchange_name != "/":
-                exchange = await channel.declare_exchange(name=exchange_name)
+            exchange = await channel.declare_exchange(name=exchange_name,type="fanout")
             
             await queue.bind(exchange, routing_key=routing_key)
             
@@ -76,7 +77,7 @@ class MessageBroker:
                 async for msg in queue_iter:
                     try:
                         parsed = json.loads(msg.body)
-                        callback(parsed)
+                        await callback(parsed)
                     except json.JSONDecodeError as e:
                         logger.error(f"Failed to decode json message {e!r}")
                     except Exception as e:
