@@ -41,14 +41,15 @@ class MessageBroker:
 
     async def _listen_async(self,
                             exchange: aio_pika.abc.AbstractExchange,
-                            callback: Callable[[Dict[str, Any]], Awaitable[None]]) -> None:
+                            callback: Callable[[Dict[str, Any]], Awaitable[None]],
+                            queue_name: str = "") -> None:
         if self.connection is None:
             raise RuntimeError("Must call .connect_async before trying to listen")
 
         channel = await self.connection.channel()
 
         async with channel:
-            queue = await channel.declare_queue(name="", auto_delete=True)
+            queue = await channel.declare_queue(name=queue_name, auto_delete=True)
             await queue.bind(exchange, routing_key="#")
 
             async with queue.iterator() as queue_iter:
@@ -61,6 +62,15 @@ class MessageBroker:
                     except Exception as e:
                         logger.error(f"Unknown exception occured while parsing message: {e}")
                         raise
+
+    async def listen_raw_events_async(self,
+                                     callback: Callable[[Dict[str, Any]], Awaitable[None]]) -> None:
+        if self.connection is None:
+            raise RuntimeError("Must call .connect_async before trying to listen")
+
+        channel = await self.connection.channel()
+        async with channel:
+            await self._listen_async(channel.default_exchange, callback, queue_name=self.rabbit_queue)
 
     async def listen_processed_events_async(self,
                                             exchange_name: str,

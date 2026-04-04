@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 
 COPY /shared/python /app/services/shared/python
-RUN pip install /app/services/shared/python
+RUN pip install -e /app/services/shared/python
 
 COPY ./backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
