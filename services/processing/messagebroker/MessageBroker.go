@@ -1,8 +1,10 @@
 package messagebroker
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"log"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
@@ -10,6 +12,10 @@ import (
 	"github.com/IshaySela/israel-osint-ai/services/processing/workerpool"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
+
+type EventProcessor interface {
+	Process(ctx context.Context, event models.RawOsintEvent) error
+}
 
 type RabbitClient struct {
 	conn    *amqp.Connection
@@ -37,7 +43,7 @@ func (rl *RabbitClient) setup() error {
 
 	err = ch.ExchangeDeclare(rl.config.ProcessedEventsExchange,
 		"fanout",
-		true, // durable
+		true,  // durable
 		false, false, false, nil)
 
 	if err != nil {
@@ -62,8 +68,7 @@ func (rl *RabbitClient) setup() error {
 	return nil
 }
 
-func (rl *RabbitClient) ListenForRawEvents() error {
-
+func (rl *RabbitClient) ListenForRawEvents(ctx context.Context, proc EventProcessor) error {
 	if err := rl.setup(); err != nil {
 		return err
 	}
@@ -71,7 +76,7 @@ func (rl *RabbitClient) ListenForRawEvents() error {
 	msgs, err := rl.channel.Consume(
 		rl.queue.Name, // queue
 		"",            // consumer
-		true,          // auto-ack
+		false,         // auto-ack = false
 		false,         // exclusive
 		false,         // no-local
 		false,         // no-wait
@@ -84,12 +89,21 @@ func (rl *RabbitClient) ListenForRawEvents() error {
 
 	go func() {
 		for d := range msgs {
+			d := d
 			var event models.RawOsintEvent
-			err := event.Unmarshal(d.Body)
-			if err != nil {
+			if err := event.Unmarshal(d.Body); err != nil {
+				log.Printf("Failed to unmarshal message, discarding: %v", err)
+				d.Nack(false, false)
 				continue
 			}
-			rl.pool.Submit(event)
+			rl.pool.Submit(func() {
+				if err := proc.Process(ctx, event); err != nil {
+					log.Printf("Failed to process event, requeueing: %v", err)
+					d.Nack(false, true)
+				} else {
+					d.Ack(false)
+				}
+			})
 		}
 	}()
 
@@ -98,7 +112,7 @@ func (rl *RabbitClient) ListenForRawEvents() error {
 
 func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte) error {
 	if rl.channel == nil {
-		return errors.New("Failed to publish message, the function was called before creating the channel")
+		return errors.New("failed to publish message, channel not initialized")
 	}
 
 	return rl.channel.Publish(
@@ -114,7 +128,7 @@ func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte)
 }
 
 func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent, dbId string) error {
-	var msg = models.ProcessedEventMessage{
+	msg := models.ProcessedEventMessage{
 		DbId:      dbId,
 		Summary:   ev.Summary,
 		Locations: ev.Locations,

@@ -1,45 +1,31 @@
 package workerpool
 
-import (
-	"context"
-	"sync"
-
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
-)
-
-type Worker interface {
-	Process(ctx context.Context, event models.RawOsintEvent)
-}
+import "sync"
 
 type WorkerPool struct {
-	taskQueue   chan models.RawOsintEvent
+	taskQueue   chan func()
 	workerCount int
 	wg          sync.WaitGroup
 }
 
 func NewWorkerPool(workerCount int, queueSize int) *WorkerPool {
 	return &WorkerPool{
-		taskQueue:   make(chan models.RawOsintEvent, queueSize),
+		taskQueue:   make(chan func(), queueSize),
 		workerCount: workerCount,
 	}
 }
 
-func (wp *WorkerPool) Start(ctx context.Context, worker Worker) {
+func (wp *WorkerPool) Start() {
 	for i := 0; i < wp.workerCount; i++ {
 		wp.wg.Add(1)
 		go func() {
 			defer wp.wg.Done()
-			for event := range wp.taskQueue {
-				worker.Process(ctx, event)
+			for task := range wp.taskQueue {
+				task()
 			}
 		}()
 	}
 }
 
-func (wp *WorkerPool) Submit(event models.RawOsintEvent) {
-	wp.taskQueue <- event
-}
-
-func (wp *WorkerPool) Wait() {
-	wp.wg.Wait()
-}
+func (wp *WorkerPool) Submit(task func()) { wp.taskQueue <- task }
+func (wp *WorkerPool) Wait()              { wp.wg.Wait() }

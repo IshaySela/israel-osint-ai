@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
@@ -27,21 +28,18 @@ func NewProcessor(cfg *config.Config, geocoder *de.GeocodingService, esClient *s
 	}
 }
 
-func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
+func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) error {
 	log.Printf("Processing event: %s\n", string(event.Text))
 	result, err := de.CreateAgentSummary(event, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
-
 	if err != nil {
-		log.Printf("Error extracting info: %v\n", err)
-		return
+		return fmt.Errorf("error extracting info: %w", err)
 	}
 
 	log.Printf("AI Summary: %+v\n", result)
 
 	locationMap, geocodeErr := p.Geocoder.GetBatchCoordinates(result.EnLocations)
 	if geocodeErr != nil {
-		log.Printf("Error fetching coordinates: %v\n", geocodeErr)
-		return
+		return fmt.Errorf("error fetching coordinates: %w", geocodeErr)
 	}
 
 	for loc, geo := range locationMap {
@@ -69,21 +67,15 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) {
 
 	err, docId := p.ESClient.IndexEvent(ctx, p.Cfg.ElasticsearchIndex, processedEvent)
 	if err != nil {
-		log.Printf("Error indexing event to elasticsearch: %v\n", err)
-		return
+		return fmt.Errorf("error indexing event to elasticsearch: %w", err)
 	}
 
 	log.Println("Successfully indexed event to elasticsearch")
 
-	err = p.broker.PublishProcessedEvent(processedEvent, docId)
-	if err != nil {
-		log.Printf("Error publishing processed events %v", err)
+	if err = p.broker.PublishProcessedEvent(processedEvent, docId); err != nil {
+		return fmt.Errorf("error publishing processed event: %w", err)
 	}
-	log.Printf("Published the processed events to %s", p.Cfg.ProcessedEventsExchange)
-}
 
-func (p *Processor) StartWorker(ctx context.Context, taskQueue <-chan models.RawOsintEvent) {
-	for event := range taskQueue {
-		p.Process(ctx, event)
-	}
+	log.Printf("Published the processed event to %s", p.Cfg.ProcessedEventsExchange)
+	return nil
 }

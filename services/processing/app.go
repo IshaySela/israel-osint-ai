@@ -35,10 +35,10 @@ func main() {
 	proc := processor.NewProcessor(cfg, geocoder, esClient, &broker)
 
 	log.Printf("Starting %d workers...\n", cfg.WorkerCount)
-	pool.Start(ctx, proc)
+	pool.Start()
 
 	log.Println("Starting message broker...")
-	if err := broker.ListenForRawEvents(); err != nil {
+	if err := broker.ListenForRawEvents(ctx, proc); err != nil {
 		log.Fatalf("Error starting message broker: %v\n", err)
 	}
 
