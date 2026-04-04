@@ -53,7 +53,7 @@ async def events_stream(request: Request) -> EventSourceResponse:
         # Start listening for msgs in the background
         listen_task = asyncio.create_task(
             broker.listen_async(
-                exchange=cfg.processed_events_exchange,
+                exchange_name=cfg.processed_events_exchange,
                 queue_name="",
                 callback=callback
             )

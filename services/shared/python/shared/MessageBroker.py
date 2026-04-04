@@ -18,80 +18,66 @@ class MessageBroker:
         self.connection = None
         self.timeout = timeout
 
-    async def connect(self):
+    async def connect_async(self):
+        """Establishes a robust async connection to RabbitMQ."""
         self.connection = await aio_pika.connect_robust(host=self.rabbit_host)
-        await self.connection.connect(self.timeout)
-        
-        async with self.connection:
-            channel = self.connection.channel()  
-            await channel.declare_queue(name=self.rabbit_queue)
-    async def publish_event_async(self,event_data: Dict[str, Any]) -> None:
+
+    async def publish_event_async(self, event_data: Dict[str, Any]) -> None:
+        """Publishes a JSON-serialized event to the default queue.
+
+        Args:
+            event_data: Dictionary to serialize and publish as a message.
+
+        Raises:
+            RuntimeError: If called before `connect_async`.
+        """
         if self.connection is None:
             raise RuntimeError("Must call .connect before trying to publish")
-            
+
         async with self.connection:
             channel = self.connection.channel()
             msg = aio_pika.Message(json.dumps(event_data).encode())
             await channel.default_exchange.publish(msg, routing_key=self.rabbit_queue)
-            
 
-    async def listen_async(
-        self,
-        exchange: str,
-        queue_name: str,
-        callback: Callable[[Dict[str, Any]], Awaitable[None]]
-    ) -> None:
-        """
-        Listens for messages from a specific exchange and queue asynchronously.
-        
+    async def listen_async(self, queu_name: str, routing_key: str, callback: Callable[[Dict[str, Any]], Awaitable[None]], exchange_name: str = '/') -> None:
+        """Binds a queue to an exchange and consumes messages indefinitely.
+
+        Declares the queue (auto-delete) and optionally binds it to a named
+        exchange before entering a message loop. Each message body is
+        JSON-decoded and forwarded to `callback`. Malformed JSON is logged and
+        skipped; all other exceptions are logged and re-raised.
+
         Args:
-            exchange: The name of the exchange to bind to.
-            queue_name: The name of the queue to listen on.
-            callback: An async function to call when a message is received.
+            queu_name: Name of the queue to declare and consume from.
+            routing_key: Routing key used when binding the queue to the exchange.
+            callback: Async callable invoked with the parsed message dict.
+            exchange_name: Exchange to bind to. Use '/' to skip exchange
+                declaration and use the channel's default exchange.
+
+        Raises:
+            RuntimeError: If called before `connect_async`.
         """
-        logger.info(f"Starting async listener on exchange: '{exchange}', queue: '{queue_name}'")
-        retries = 0
-        while retries < self.max_retries:
-            try:
-                connection = await aio_pika.connect_robust(
-                    f"amqp://{self.rabbit_host}/",
-                )
-                async with connection:
-                    channel = await connection.channel()
-                    
-                    if exchange:
-                        await channel.declare_exchange(exchange, aio_pika.ExchangeType.FANOUT, durable=True)
-                    
-                    # For empty queue_name, use non-durable, auto-delete, exclusive
-                    is_exclusive = not queue_name
-                    queue = await channel.declare_queue(
-                        queue_name, 
-                        durable=not is_exclusive,
-                        auto_delete=is_exclusive,
-                        exclusive=is_exclusive
-                    )
-                    
-                    if exchange:
-                        await queue.bind(exchange, routing_key="#")
-                    
-                    logger.info(f"Waiting for messages in {queue.name}...")
-                    async with queue.iterator() as queue_iter:
-                        async for message in queue_iter:
-                            async with message.process():
-                                try:
-                                    event_data = json.loads(message.body.decode())
-                                    await callback(event_data)
-                                except json.JSONDecodeError:
-                                    logger.error(f"Failed to decode message body: {message.body!r}")
-                                except Exception as e:
-                                    logger.error(f"Error in async callback: {e}")
-                                    # message.process() will handle nack if exception is raised
-                                    raise
-            except Exception as e:
-                retries += 1
-                logger.warning(f"Async connection to RabbitMQ failed ({e}), retrying in {self.retry_delay}s ({retries}/{self.max_retries})...")
-                await asyncio.sleep(self.retry_delay)
+        if self.connection is None:
+            raise RuntimeError("Must call .connect before trying to publish")
         
-        if retries >= self.max_retries:
-            logger.error(f"Failed to connect to RabbitMQ (async) after {self.max_retries} retries")
-            raise RuntimeError(f"Failed to connect to RabbitMQ (async) after {self.max_retries} retries")
+        async with self.connection:
+            channel = await self.connection.channel()
+            queue = await channel.declare_queue(name=queu_name,auto_delete=True)
+            
+            exchange = channel.default_exchange
+            
+            if exchange_name != "/":
+                exchange = await channel.declare_exchange(name=exchange_name)
+            
+            await queue.bind(exchange, routing_key=routing_key)
+            
+            async with queue.iterator() as queue_iter:
+                async for msg in queue_iter:
+                    try:
+                        parsed = json.loads(msg.body)
+                        callback(parsed)
+                    except json.JSONDecodeError as e:
+                        logger.error(f"Failed to decode json message {e!r}")
+                    except Exception as e:
+                        logger.error(f"Unknown exception occured while parsing message from exchange {exchange_name} queue {queu_name} key: {routing_key} error: {e}")
+                        raise e
