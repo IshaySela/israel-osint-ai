@@ -1,66 +1,39 @@
-import pika
 import json
-import time
 import asyncio
 import aio_pika
-from typing import Optional, Dict, Any, Callable, Awaitable
+from aio_pika.exceptions import AMQPConnectionError, AMQPChannelError
+from typing import Dict, Any, Callable, Awaitable
 from loguru import logger
-from pika.exceptions import AMQPChannelError, AMQPConnectionError
-from pika.adapters.blocking_connection import BlockingChannel
+from aio_pika.robust_connection import RobustConnection
 
 class MessageBroker:
-    connection: Optional[pika.BlockingConnection]
-    channel: Optional[BlockingChannel]
-
-    def __init__(self, rabbit_host: str, rabbit_queue: str, max_retries: int = 5, retry_delay: int = 5) -> None:
+    """The class MessageBroker abstract the impl details, optimzations etc. for directly working with
+    the message broker and provides a simple declartive API specific to this project.
+    """
+    def __init__(self, rabbit_host: str, rabbit_queue: str, max_retries: int = 5, retry_delay: int = 5, timeout: int = 10) -> None:
         self.rabbit_host = rabbit_host
         self.rabbit_queue = rabbit_queue
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self.channel = None
-        self._connect()
+        self.connection = None
+        self.timeout = timeout
 
-    def _connect(self) -> None:
-        retries = 0
-        connected = False
-        while retries < self.max_retries and not connected:
-            retries += 1
-            try:
-                self.connection = pika.BlockingConnection(
-                    pika.ConnectionParameters(host=self.rabbit_host)
-                )
-                self._setup_channel()
-                logger.info(f"Connected to RabbitMQ at {self.rabbit_host}")
-                connected = True
-            except AMQPConnectionError:
-                logger.warning(f"Failed to connect to RabbitMQ at {self.rabbit_host}, retrying in {self.retry_delay}s...")
-                time.sleep(self.retry_delay)
-        if not connected:
-            raise RuntimeError(f"Failed to connect to RabbitMQ after {self.max_retries} retries")        
+    async def connect(self):
+        self.connection = await aio_pika.connect_robust(host=self.rabbit_host)
+        await self.connection.connect(self.timeout)
         
-    def _setup_channel(self):
-        if self.connection:
-            self.channel = self.connection.channel()
-        if self.channel:
-            self.channel.queue_declare(queue=self.rabbit_queue)
-
-    def publish_event(self, event_data: Dict[str, Any]) -> None:
-        try:
-            if self.channel:
-                self.channel.basic_publish(
-                    exchange='',
-                    routing_key=self.rabbit_queue,
-                    body=json.dumps(event_data)
-                )
-        except (AMQPConnectionError, AMQPChannelError):
-            logger.error("RabbitMQ connection lost, reconnecting...")
-            self._connect()
-            if self.channel:
-                self.channel.basic_publish(
-                    exchange='',
-                    routing_key=self.rabbit_queue,
-                    body=json.dumps(event_data)
-                )
+        async with self.connection:
+            channel = self.connection.channel()  
+            await channel.declare_queue(name=self.rabbit_queue)
+    async def publish_event_async(self,event_data: Dict[str, Any]) -> None:
+        if self.connection is None:
+            raise RuntimeError("Must call .connect before trying to publish")
+            
+        async with self.connection:
+            channel = self.connection.channel()
+            msg = aio_pika.Message(json.dumps(event_data).encode())
+            await channel.default_exchange.publish(msg, routing_key=self.rabbit_queue)
+            
 
     async def listen_async(
         self,
