@@ -13,13 +13,16 @@ import (
 type Config struct {
 	RabbitMQURL               string
 	RabbitMQQueue             string
+	RawEventsExchange         string
+	ProcessedEventsExchange   string
+	DLXExchange               string
+	DLXQueue                  string
 	ElasticsearchURLs         []string
 	ElasticsearchIndex        string
 	ElasticsearchGeocodeIndex string
 	OpenAIKey                 string
 	OpenAIModel               string
 	WorkerCount               int
-	ProcessedEventsExchange   string
 }
 
 var (
@@ -37,13 +40,16 @@ func LoadConfig() *Config {
 		instance = &Config{
 			RabbitMQURL:               getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
 			RabbitMQQueue:             getEnv("RABBITMQ_QUEUE", "osint_events"),
+			RawEventsExchange:         getEnv("RAW_EVENTS_EXCHANGE", "raw_events"),
+			ProcessedEventsExchange:   getEnv("PROCESSED_EVENTS_EXCHANGE", "processed_events"),
+			DLXExchange:               getEnv("DLX_EXCHANGE", "dead_letter"),
+			DLXQueue:                  getEnv("DLX_QUEUE", "dead_letter_queue"),
 			ElasticsearchURLs:         strings.Split(getEnv("ELASTICSEARCH_URLS", "http://localhost:9200"), ","),
 			ElasticsearchIndex:        getEnv("ELASTICSEARCH_INDEX", "osint_events"),
 			ElasticsearchGeocodeIndex: getEnv("ELASTICSEARCH_GEOCODE_INDEX", "geocode_cache"),
 			OpenAIKey:                 getEnv("OPENAI_API_KEY", ""),
 			OpenAIModel:               getEnv("OPENAI_MODEL", "gpt-5-mini"),
 			WorkerCount:               getEnvInt("WORKER_COUNT", 5),
-			ProcessedEventsExchange:   getEnv("PROCESSED_EVENTS_EXCHANGE", "processed_events"),
 		}
 	})
 
