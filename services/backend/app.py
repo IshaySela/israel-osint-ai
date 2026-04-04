@@ -59,10 +59,7 @@ async def events_stream(request: Request) -> EventSourceResponse:
         
         async def listener():
             logger.info("Start to listen for incoming events...")
-            await broker.listen_processed_events_async(
-                callback=callback,
-                exchange_name=cfg.processed_events_exchange
-            )
+            await broker.listen_processed_events_async(callback=callback)
         
         # Start listening for msgs in the background
         listen_task = asyncio.create_task(listener())
