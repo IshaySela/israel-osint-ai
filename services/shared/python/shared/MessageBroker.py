@@ -10,17 +10,16 @@ class MessageBroker:
     """The class MessageBroker abstract the impl details, optimzations etc. for directly working with
     the message broker and provides a simple declartive API specific to this project.
     """
-    def __init__(self, rabbit_host: str, rabbit_queue: str, max_retries: int = 5, retry_delay: int = 5, timeout: int = 10) -> None:
+    def __init__(self, rabbit_host: str, rabbit_queue: str) -> None:
         self.rabbit_host = rabbit_host
         self.rabbit_queue = rabbit_queue
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
         self.connection = None
-        self.timeout = timeout
+        self.is_connected = False
 
     async def connect_async(self):
         """Establishes a robust async connection to RabbitMQ."""
         self.connection = await aio_pika.connect_robust(host=self.rabbit_host)
+        self.is_connected = True
 
     async def publish_event_async(self, event_data: Dict[str, Any]) -> None:
         """Publishes a JSON-serialized event to the default queue.
@@ -34,10 +33,11 @@ class MessageBroker:
         if self.connection is None:
             raise RuntimeError("Must call .connect before trying to publish")
 
-        async with self.connection:
-            channel = await self.connection.channel()
+        channel = await self.connection.channel()
+        async with channel:
             msg = aio_pika.Message(json.dumps(event_data).encode())
             await channel.default_exchange.publish(msg, routing_key=self.rabbit_queue)
+            
 
     async def listen_async(self, queu_name: str, routing_key: str, callback: Callable[[Dict[str, Any]], Awaitable[None]], exchange_name: str = '/') -> None:
         """Binds a queue to an exchange and consumes messages indefinitely.
@@ -60,10 +60,11 @@ class MessageBroker:
         if self.connection is None:
             raise RuntimeError("Must call .connect before trying to publish")
         
-        async with self.connection:
-            channel = await self.connection.channel()
-            queue = await channel.declare_queue(name=queu_name,auto_delete=True)
-            
+        channel = await self.connection.channel()
+        
+        async with channel:
+            queue = await channel.declare_queue(name=queu_name, auto_delete=True)
+                
             exchange = channel.default_exchange
             
             if exchange_name != "/":
