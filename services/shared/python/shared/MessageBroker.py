@@ -35,7 +35,7 @@ class MessageBroker:
             raise RuntimeError("Must call .connect before trying to publish")
 
         async with self.connection:
-            channel = self.connection.channel()
+            channel = await self.connection.channel()
             msg = aio_pika.Message(json.dumps(event_data).encode())
             await channel.default_exchange.publish(msg, routing_key=self.rabbit_queue)
 

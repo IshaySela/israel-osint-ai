@@ -59,6 +59,7 @@ services:
       - "5000:5000"
     volumes:
       - ./services/backend:/app
+      - ./services/shared/python:/app
     env_file:
       - ./services/backend/.env
     environment:

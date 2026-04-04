@@ -42,6 +42,10 @@ graphql_app = GraphQL(schema, debug=cfg.debug)
 # Message Broker for SSE
 broker = MessageBroker(rabbit_host=cfg.rabbitmq_host, rabbit_queue="")
 
+@app.on_event("startup")
+async def startup():
+    await broker.connect_async()
+
 @app.get("/events-stream")
 async def events_stream(request: Request) -> EventSourceResponse:
     async def event_generator() -> AsyncGenerator[Dict[str, Any], None]:
@@ -53,9 +57,10 @@ async def events_stream(request: Request) -> EventSourceResponse:
         # Start listening for msgs in the background
         listen_task = asyncio.create_task(
             broker.listen_async(
-                exchange_name=cfg.processed_events_exchange,
-                queue_name="",
-                callback=callback
+                queu_name="",
+                routing_key="#",
+                callback=callback,
+                exchange_name=cfg.processed_events_exchange
             )
         )
 

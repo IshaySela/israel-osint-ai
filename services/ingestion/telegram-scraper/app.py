@@ -22,17 +22,17 @@ broker = MessageBroker(CONFIG.rabbit_host, CONFIG.rabbit_queue)
 async def handler(event: events.NewMessage.Event):
     msg: Message = event.message
     text = msg.message or ''
-    
+
     chat: Chat = await event.get_chat() # type: ignore
-    
+
     if text is None:
         logger.error(f"Skipping, recived empty msg from channel {chat.id} {chat.title}")
-    
+
     logger.error(f"Recived msg from channel {chat.id} {chat.title} {text[:30]}")
-    
+
     event_type = await classify_telegram_msg(text)
     logger.info(f"Classified Message from channel{chat.id}: {text[:30]}... | Type: {event_type}")
-        
+
     if event_type != 'not_relevant':
         event_data = {
             'text': text,
@@ -41,13 +41,14 @@ async def handler(event: events.NewMessage.Event):
             'message_id': msg.id,
             'date': str(msg.date)
         }
-        
-        broker.publish_event(event_data)
+
+        await broker.publish_event_async(event_data)
         logger.info(f"Published event: {event_type} {text[:30]}")
-    
+
 
 async def main():
     logger.info(f"Starting telegram scraper service for channels: {[c.channelName for c in CONFIG.channels]}")
+    await broker.connect_async()
     client.start()
     await client.connect()
     
