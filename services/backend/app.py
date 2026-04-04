@@ -59,9 +59,7 @@ async def events_stream(request: Request) -> EventSourceResponse:
         
         async def listener():
             logger.info("Start to listen for incoming events...")
-            await broker.listen_async(
-                queu_name="",
-                routing_key="#",
+            await broker.listen_processed_events_async(
                 callback=callback,
                 exchange_name=cfg.processed_events_exchange
             )
