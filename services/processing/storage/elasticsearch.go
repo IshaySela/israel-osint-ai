@@ -2,12 +2,15 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 type ElasticsearchClient struct {
@@ -82,4 +85,37 @@ func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, 
 	}
 
 	return nil, res.Id_
+}
+
+func (esc *ElasticsearchClient) GetGeocode(ctx context.Context, index string, location string) (models.GeocodeCache, error) {
+	if esc.client == nil {
+		return models.GeocodeCache{}, fmt.Errorf("elasticsearch client not initialized, call Setup first")
+	}
+
+	searchResult, err := esc.client.
+		Search().
+		Index(index).
+		Request(&search.Request{
+			Query: &types.Query{
+				Match: map[string]types.MatchQuery{
+					"location_text": {Query: location},
+				},
+			},
+		}).Do(ctx)
+
+	if err != nil {
+		return models.GeocodeCache{}, fmt.Errorf("Could not find location in cache")
+	}
+
+	if searchResult.Hits.Total.Value == 0 {
+		return models.GeocodeCache{}, fmt.Errorf("Cache miss while retriving geocode from es")
+	}
+	var parsed models.GeocodeCache
+
+	err = json.Unmarshal(searchResult.Hits.Hits[0].Source_, &parsed)
+	if err != nil {
+		return models.GeocodeCache{}, fmt.Errorf("Error while parsing result from es %s", err.Error())
+	}
+
+	return parsed, nil
 }
