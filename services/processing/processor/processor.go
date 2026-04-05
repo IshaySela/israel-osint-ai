@@ -43,7 +43,7 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) err
 	}
 
 	for loc, geo := range locationMap {
-		err, _ := p.ESClient.IndexGeocode(ctx, p.Cfg.ElasticsearchGeocodeIndex, loc, geo)
+		err, _ := p.ESClient.IndexGeocode(ctx, loc, geo)
 		if err != nil {
 			log.Printf("Error indexing geocode for %s: %v\n", loc, err)
 		}
