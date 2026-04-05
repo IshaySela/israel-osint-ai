@@ -65,7 +65,7 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) err
 		Timestamp:  event.Date,
 	}
 
-	err, docId := p.ESClient.IndexEvent(ctx, p.Cfg.ElasticsearchIndex, processedEvent)
+	err, docId := p.ESClient.IndexEvent(ctx, processedEvent)
 	if err != nil {
 		return fmt.Errorf("error indexing event to elasticsearch: %w", err)
 	}

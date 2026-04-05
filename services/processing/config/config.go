@@ -18,7 +18,7 @@ type Config struct {
 	DLXExchange               string
 	DLXQueue                  string
 	ElasticsearchURLs         []string
-	ElasticsearchIndex        string
+	ProcessedEventsIndex      string
 	ElasticsearchGeocodeIndex string
 	OpenAIKey                 string
 	OpenAIModel               string
@@ -45,7 +45,7 @@ func LoadConfig() *Config {
 			DLXExchange:               getEnv("DLX_EXCHANGE", "dead_letter"),
 			DLXQueue:                  getEnv("DLX_QUEUE", "dead_letter_queue"),
 			ElasticsearchURLs:         strings.Split(getEnv("ELASTICSEARCH_URLS", "http://localhost:9200"), ","),
-			ElasticsearchIndex:        getEnv("ELASTICSEARCH_INDEX", "osint_events"),
+			ProcessedEventsIndex:      getEnv("ELASTICSEARCH_INDEX", "osint_events"),
 			ElasticsearchGeocodeIndex: getEnv("ELASTICSEARCH_GEOCODE_INDEX", "geocode_cache"),
 			OpenAIKey:                 getEnv("OPENAI_API_KEY", ""),
 			OpenAIModel:               getEnv("OPENAI_MODEL", "gpt-5-mini"),

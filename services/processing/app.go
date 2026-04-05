@@ -25,7 +25,7 @@ func main() {
 		return nominatim.NominatimSearch(location, rateLimiter)
 	})
 
-	esClient := storage.NewElasticsearchClient()
+	esClient := storage.NewElasticsearchClient(cfg)
 	if err := esClient.Setup(cfg.ElasticsearchURLs); err != nil {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
 	}

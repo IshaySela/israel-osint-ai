@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
@@ -15,6 +16,7 @@ import (
 
 type ElasticsearchClient struct {
 	client *elasticsearch.TypedClient
+	cfg    *config.Config
 }
 
 type ProcessedEvent struct {
@@ -24,8 +26,10 @@ type ProcessedEvent struct {
 	Timestamp  string            `json:"timestamp"`
 }
 
-func NewElasticsearchClient() *ElasticsearchClient {
-	return &ElasticsearchClient{}
+func NewElasticsearchClient(cfg *config.Config) *ElasticsearchClient {
+	return &ElasticsearchClient{
+		cfg: cfg,
+	}
 }
 
 func (esc *ElasticsearchClient) Setup(addresses []string) error {
@@ -46,13 +50,13 @@ func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	return nil
 }
 
-func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, event ProcessedEvent) (error, string) {
+func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event ProcessedEvent) (error, string) {
 	if esc.client == nil {
 		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
 
 	res, err := esc.client.
-		Index(index).
+		Index(esc.cfg.ProcessedEventsIndex).
 		Document(event).
 		Do(ctx)
 
@@ -63,7 +67,7 @@ func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, ev
 	return nil, res.Id_
 }
 
-func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, locationText string, geocode models.Geocode) (error, string) {
+func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, locationText string, geocode models.Geocode) (error, string) {
 	if esc.client == nil {
 		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
@@ -78,7 +82,10 @@ func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, 
 		Timestamp:    time.Now().Format(time.RFC3339),
 	}
 
-	res, err := esc.client.Index(index).Document(cache).Do(ctx)
+	res, err := esc.client.
+		Index(esc.cfg.ElasticsearchGeocodeIndex).
+		Document(cache).
+		Do(ctx)
 
 	if err != nil {
 		return fmt.Errorf("error indexing geocode cache: %w", err), ""
