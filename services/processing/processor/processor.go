@@ -42,13 +42,6 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) err
 		return fmt.Errorf("error fetching coordinates: %w", geocodeErr)
 	}
 
-	for loc, geo := range locationMap {
-		err, _ := p.ESClient.IndexGeocode(ctx, loc, geo)
-		if err != nil {
-			log.Printf("Error indexing geocode for %s: %v\n", loc, err)
-		}
-	}
-
 	var locations []models.Location
 	for name, geo := range locationMap {
 		locations = append(locations, models.Location{
