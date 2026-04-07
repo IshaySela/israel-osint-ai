@@ -5,6 +5,8 @@ import os
 from dotenv import load_dotenv
 from typing import List, Optional
 
+from shared.config import SharedConfig, Topology
+
 
 @dataclass
 class ChannelInfo:
@@ -38,12 +40,13 @@ class TelegramScraperConfig:
             return TelegramScraperConfig.configSingleton
 
         load_dotenv()
-        shared = _load_shared_config()
+        topo = Topology.load()
+        shared = SharedConfig.load()
+
+        # Secrets — env var only
         openai_api_key: Optional[str] = os.environ.get('OPENAI_API_KEY')
         telegram_api_id: Optional[str] = os.environ.get('TELEGRAM_API_ID')
         telegram_api_hash: Optional[str] = os.environ.get('TELEGRAM_API_HASH')
-        rabbit_host: str = os.environ.get('RABBIT_HOST', 'localhost')
-        rabbit_queue: str = os.environ.get('RABBIT_QUEUE', shared.get("messaging", {}).get("queue", "events"))
 
         if telegram_api_id is None or telegram_api_hash is None or openai_api_key is None:
             raise ValueError('TELEGRAM_API_ID, TELEGRAM_API_HASH and OPENAI_API_KEY must be set')
@@ -72,17 +75,9 @@ class TelegramScraperConfig:
             api_id=telegram_api_id,
             api_hash=telegram_api_hash,
             openai_api_key=openai_api_key,
-            rabbit_host=rabbit_host,
-            rabbit_queue=rabbit_queue,
+            rabbit_host=topo.rabbitmq.host,
+            rabbit_queue=shared.messaging.queue,
             channels=channels
         )
         TelegramScraperConfig.configSingleton = config
         return config
-
-
-def _load_shared_config() -> dict:
-    config_path = Path("/shared/config/config.json")
-    if config_path.exists():
-        with open(config_path) as f:
-            return json.load(f)
-    return {}

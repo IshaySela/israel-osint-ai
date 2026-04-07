@@ -4,7 +4,7 @@
     "port": 5672,
     "management_port": 15672,
     "user": "guest",
-    "pass": "guest"
+    "password": "guest"
   },
   "elasticsearch": {
     "host": "elasticsearch",

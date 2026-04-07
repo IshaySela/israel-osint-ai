@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 	"sync"
 
 	"github.com/joho/godotenv"
@@ -31,6 +30,19 @@ var (
 	once     sync.Once
 )
 
+type topology struct {
+	RabbitMQ struct {
+		Host     string `json:"host"`
+		Port     int    `json:"port"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+	} `json:"rabbitmq"`
+	Elasticsearch struct {
+		Host string `json:"host"`
+		Port int    `json:"port"`
+	} `json:"elasticsearch"`
+}
+
 type sharedConfig struct {
 	Messaging struct {
 		Queue                   string `json:"queue"`
@@ -48,15 +60,26 @@ type sharedConfig struct {
 	} `json:"openai"`
 }
 
+func loadTopology() topology {
+	var t topology
+	data, err := os.ReadFile("/shared/config/topology.json")
+	if err != nil {
+		log.Fatal("topology.json not found: ", err)
+	}
+	if err := json.Unmarshal(data, &t); err != nil {
+		log.Fatal("failed to parse topology.json: ", err)
+	}
+	return t
+}
+
 func loadSharedConfig() sharedConfig {
 	var cfg sharedConfig
 	data, err := os.ReadFile("/shared/config/config.json")
 	if err != nil {
-		log.Println("No shared config.json found, using defaults")
-		return cfg
+		log.Fatal("config.json not found: ", err)
 	}
 	if err := json.Unmarshal(data, &cfg); err != nil {
-		log.Printf("Failed to parse shared config.json: %v", err)
+		log.Fatal("failed to parse config.json: ", err)
 	}
 	return cfg
 }
@@ -68,21 +91,27 @@ func LoadConfig() *Config {
 			log.Println("No .env file found, reading from environment variables")
 		}
 
+		topo := loadTopology()
 		shared := loadSharedConfig()
 
 		instance = &Config{
-			RabbitMQURL:               getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
-			RabbitMQQueue:             getEnv("RABBITMQ_QUEUE", shared.Messaging.Queue),
-			RawEventsExchange:         getEnv("RAW_EVENTS_EXCHANGE", shared.Messaging.RawEventsExchange),
-			ProcessedEventsExchange:   getEnv("PROCESSED_EVENTS_EXCHANGE", shared.Messaging.ProcessedEventsExchange),
-			DLXExchange:               getEnv("DLX_EXCHANGE", shared.Messaging.DLXExchange),
-			DLXQueue:                  getEnv("DLX_QUEUE", shared.Messaging.DLXQueue),
-			ElasticsearchURLs:         strings.Split(getEnv("ELASTICSEARCH_URLS", "http://localhost:9200"), ","),
-			ProcessedEventsIndex:      getEnv("ELASTICSEARCH_INDEX", shared.Elasticsearch.Index),
-			ElasticsearchGeocodeIndex: getEnv("ELASTICSEARCH_GEOCODE_INDEX", shared.Elasticsearch.GeocodeIndex),
-			OpenAIKey:                 getEnv("OPENAI_API_KEY", ""),
-			OpenAIModel:               getEnv("OPENAI_MODEL", shared.OpenAI.Model),
-			WorkerCount:               getEnvInt("WORKER_COUNT", 5),
+			// Infrastructure — topology.json
+			RabbitMQURL:       fmt.Sprintf("amqp://%s:%s@%s:%d/", topo.RabbitMQ.User, topo.RabbitMQ.Password, topo.RabbitMQ.Host, topo.RabbitMQ.Port),
+			ElasticsearchURLs: []string{fmt.Sprintf("http://%s:%d", topo.Elasticsearch.Host, topo.Elasticsearch.Port)},
+
+			// Secrets / service-specific — env var only
+			OpenAIKey:   getEnv("OPENAI_API_KEY", ""),
+			WorkerCount: getEnvInt("WORKER_COUNT", 5),
+
+			// Topology — config.json only
+			RabbitMQQueue:             shared.Messaging.Queue,
+			RawEventsExchange:         shared.Messaging.RawEventsExchange,
+			ProcessedEventsExchange:   shared.Messaging.ProcessedEventsExchange,
+			DLXExchange:               shared.Messaging.DLXExchange,
+			DLXQueue:                  shared.Messaging.DLXQueue,
+			ProcessedEventsIndex:      shared.Elasticsearch.Index,
+			ElasticsearchGeocodeIndex: shared.Elasticsearch.GeocodeIndex,
+			OpenAIModel:               shared.OpenAI.Model,
 		}
 	})
 

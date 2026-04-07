@@ -35,6 +35,7 @@ class ESClient:
                 }
                 
                 events.append(event)
+            logger.info(f"Retrived {len(events)} events from the database")
             return events
         except Exception as e:
             logger.error(f"Error fetching from Elasticsearch: {e}")
