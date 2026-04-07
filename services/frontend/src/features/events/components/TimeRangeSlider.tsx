@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setTimeRange } from '../store/eventSlice';
 import type { RootState } from '../../../store';
@@ -11,6 +11,13 @@ const TimeRangeSlider: React.FC = () => {
     (state: RootState) => state.event.timeRange
   );
 
+  const [localFrom, setLocalFrom] = useState(fromHoursAgo);
+  const [localTo, setLocalTo] = useState(toHoursAgo);
+
+  // Sync local state if Redux changes externally
+  useEffect(() => { setLocalFrom(fromHoursAgo); }, [fromHoursAgo]);
+  useEffect(() => { setLocalTo(toHoursAgo); }, [toHoursAgo]);
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debounced = useCallback(
@@ -18,7 +25,7 @@ const TimeRangeSlider: React.FC = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
         dispatch(setTimeRange({ fromHoursAgo: from, toHoursAgo: to }));
-      }, 300);
+      }, 150);
     },
     [dispatch]
   );
@@ -26,27 +33,33 @@ const TimeRangeSlider: React.FC = () => {
   const handleFromChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = Number(e.target.value);
-      if (val > toHoursAgo) debounced(val, toHoursAgo);
+      if (val > localTo) {
+        setLocalFrom(val);
+        debounced(val, localTo);
+      }
     },
-    [toHoursAgo, debounced]
+    [localTo, debounced]
   );
 
   const handleToChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = Number(e.target.value);
-      if (val < fromHoursAgo) debounced(fromHoursAgo, val);
+      if (val < localFrom) {
+        setLocalTo(val);
+        debounced(localFrom, val);
+      }
     },
-    [fromHoursAgo, debounced]
+    [localFrom, debounced]
   );
 
   const label =
-    toHoursAgo === 0
-      ? `Last ${fromHoursAgo}h`
-      : `${toHoursAgo}h\u2013${fromHoursAgo}h ago`;
+    localTo === 0
+      ? `Last ${localFrom}h`
+      : `${localTo}h\u2013${localFrom}h ago`;
 
   // Track fill: slider goes 0 (left=now) to 72 (right=72h ago)
-  const leftPct = (toHoursAgo / MAX_HOURS) * 100;
-  const rightPct = ((MAX_HOURS - fromHoursAgo) / MAX_HOURS) * 100;
+  const leftPct = (localTo / MAX_HOURS) * 100;
+  const rightPct = ((MAX_HOURS - localFrom) / MAX_HOURS) * 100;
 
   const thumbClass =
     'absolute w-full appearance-none bg-transparent pointer-events-none ' +
@@ -79,8 +92,9 @@ const TimeRangeSlider: React.FC = () => {
           type="range"
           min={0}
           max={MAX_HOURS}
-          value={toHoursAgo}
+          value={localTo}
           onChange={handleToChange}
+          step={1}
           className={
             thumbClass +
             '[&::-webkit-slider-thumb]:bg-slate-300 ' +
@@ -92,8 +106,9 @@ const TimeRangeSlider: React.FC = () => {
           type="range"
           min={0}
           max={MAX_HOURS}
-          value={fromHoursAgo}
+          value={localFrom}
           onChange={handleFromChange}
+          step={1}
           className={
             thumbClass +
             '[&::-webkit-slider-thumb]:bg-cyan-400 ' +
