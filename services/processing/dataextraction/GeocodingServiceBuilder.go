@@ -54,7 +54,6 @@ func (b *GeocodingServiceBuilder) Build() (*GeocodingService, error) {
 	}
 	return &GeocodingService{
 		ctx:          b.ctx,
-		cache:        make(map[string]models.Geocode),
 		geocoder:     b.geocoder,
 		geocodeCache: b.cache,
 	}, nil
