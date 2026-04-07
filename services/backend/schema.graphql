@@ -13,4 +13,5 @@ type Event {
 
 type Query {
     latestEvents: [Event!]!
+    events(fromHoursAgo: Int!, toHoursAgo: Int!): [Event!]!
 }
