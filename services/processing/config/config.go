@@ -62,7 +62,8 @@ type sharedConfig struct {
 
 func loadTopology() topology {
 	var t topology
-	data, err := os.ReadFile("/shared/config/topology.json")
+	path := getEnv("SHARED_TOPOLOGY_JSON", "/shared/config/topology.json")
+	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatal("topology.json not found: ", err)
 	}
@@ -74,7 +75,8 @@ func loadTopology() topology {
 
 func loadSharedConfig() sharedConfig {
 	var cfg sharedConfig
-	data, err := os.ReadFile("/shared/config/config.json")
+	path := getEnv("SHARED_CONFIG_JSON", "/shared/config/config.json")
+	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatal("config.json not found: ", err)
 	}

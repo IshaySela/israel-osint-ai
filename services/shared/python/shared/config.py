@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
-
+import os
 
 @dataclass
 class RabbitMQTopology:
@@ -42,8 +42,9 @@ class Topology:
     elasticsearch: ElasticsearchTopology
 
     @classmethod
-    def load(cls, topo_path: str = "/shared/config/topology.json") -> 'Topology':
-        path = Path(topo_path)
+    def load(cls, topo_path: str | None = None) -> 'Topology':
+        resolved = topo_path or os.environ.get("SHARED_TOPOLOGY_JSON", "/shared/config/topology.json")
+        path = Path(resolved)
         if not path.exists():
             raise FileNotFoundError(f"topology.json not found at {path}")
         with open(path) as f:
@@ -99,8 +100,9 @@ class SharedConfig:
     openai: OpenAIConfig
 
     @classmethod
-    def load(cls, cfg_path: str = "/shared/config/config.json") -> 'SharedConfig':
-        path = Path(cfg_path)
+    def load(cls, cfg_path: str | None = None) -> 'SharedConfig':
+        resolved = cfg_path or os.environ.get("SHARED_CONFIG_JSON", "/shared/config/config.json")
+        path = Path(resolved)
         if not path.exists():
             raise FileNotFoundError(f"config.json not found at {path}")
         with open(path) as f:

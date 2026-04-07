@@ -67,12 +67,14 @@ services:
     environment:
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
       - HOST=0.0.0.0
+      - SHARED_TOPOLOGY_JSON=/shared/config/topology.json
+      - SHARED_CONFIG_JSON=/shared/config/config.json
     depends_on:
       elasticsearch:
         condition: service_healthy
     networks:
       - osint_network
-    
+
   frontend:
     build:
       context: ./services/frontend
@@ -102,6 +104,8 @@ services:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
       - WORKER_COUNT=5
+      - SHARED_TOPOLOGY_JSON=/shared/config/topology.json
+      - SHARED_CONFIG_JSON=/shared/config/config.json
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -124,6 +128,8 @@ services:
       - ./services/ingestion/telegram-scraper/.env
     environment:
       - RABBIT_HOST=rabbitmq
+      - SHARED_TOPOLOGY_JSON=/shared/config/topology.json
+      - SHARED_CONFIG_JSON=/shared/config/config.json
     depends_on:
       rabbitmq:
         condition: service_healthy
