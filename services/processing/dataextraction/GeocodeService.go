@@ -56,27 +56,11 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]m
 	results := make(map[string]models.Geocode)
 
 	for _, location := range locations {
-		if location == "" {
-			continue
-		}
 
-		cached, err := s.geocodeCache.GetGeocode(s.ctx, location)
-
-		if err == nil {
-			results[location] = cached.ToGeocode()
-			continue
-		}
-
-		geocode, gecErr := s.geocoder(location)
+		geocode, gecErr := s.GetCoordinate(location)
 		if gecErr != nil {
 			log.Printf("Warning: failed to fetch %s: %v\n", location, gecErr)
 			continue
-		}
-
-		err, _ = s.geocodeCache.IndexGeocode(s.ctx, location, geocode)
-
-		if err != nil {
-			log.Printf("Error while caching result of geocode (%s): %v", location, err)
 		}
 
 		results[location] = geocode
