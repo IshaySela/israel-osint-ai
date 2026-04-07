@@ -22,7 +22,7 @@ class TelegramScraperConfig:
     channels: List[ChannelInfo]
 
     configSingleton: Optional['TelegramScraperConfig'] = None
-    
+
     @staticmethod
     def get() -> 'TelegramScraperConfig':
         """Loads the Telegram API configuration from environment variables and channels from JSON.
@@ -33,17 +33,18 @@ class TelegramScraperConfig:
         Returns:
             TelegramScraperConfig: The loaded config
         """
-        
+
         if TelegramScraperConfig.configSingleton is not None:
             return TelegramScraperConfig.configSingleton
-        
+
         load_dotenv()
+        shared = _load_shared_config()
         openai_api_key: Optional[str] = os.environ.get('OPENAI_API_KEY')
         telegram_api_id: Optional[str] = os.environ.get('TELEGRAM_API_ID')
         telegram_api_hash: Optional[str] = os.environ.get('TELEGRAM_API_HASH')
         rabbit_host: str = os.environ.get('RABBIT_HOST', 'localhost')
-        rabbit_queue: str = os.environ.get('RABBIT_QUEUE', 'events')
-        
+        rabbit_queue: str = os.environ.get('RABBIT_QUEUE', shared.get("messaging", {}).get("queue", "events"))
+
         if telegram_api_id is None or telegram_api_hash is None or openai_api_key is None:
             raise ValueError('TELEGRAM_API_ID, TELEGRAM_API_HASH and OPENAI_API_KEY must be set')
 
@@ -63,13 +64,13 @@ class TelegramScraperConfig:
                 ]
         except (json.JSONDecodeError, KeyError, TypeError) as e:
             raise ValueError(f"Error parsing channels.json: {e}")
-        
+
         if not channels:
             raise ValueError('No channels found in channels.json')
-        
+
         config = TelegramScraperConfig(
-            api_id=telegram_api_id, 
-            api_hash=telegram_api_hash, 
+            api_id=telegram_api_id,
+            api_hash=telegram_api_hash,
             openai_api_key=openai_api_key,
             rabbit_host=rabbit_host,
             rabbit_queue=rabbit_queue,
@@ -77,3 +78,11 @@ class TelegramScraperConfig:
         )
         TelegramScraperConfig.configSingleton = config
         return config
+
+
+def _load_shared_config() -> dict:
+    config_path = Path("/shared/config/config.json")
+    if config_path.exists():
+        with open(config_path) as f:
+            return json.load(f)
+    return {}
