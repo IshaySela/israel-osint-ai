@@ -42,8 +42,8 @@ class Topology:
     elasticsearch: ElasticsearchTopology
 
     @classmethod
-    def load(cls) -> 'Topology':
-        path = Path("/shared/config/topology.json")
+    def load(cls, topo_path: str = "/shared/config/topology.json") -> 'Topology':
+        path = Path(topo_path)
         if not path.exists():
             raise FileNotFoundError(f"topology.json not found at {path}")
         with open(path) as f:
@@ -99,8 +99,8 @@ class SharedConfig:
     openai: OpenAIConfig
 
     @classmethod
-    def load(cls) -> 'SharedConfig':
-        path = Path("/shared/config/config.json")
+    def load(cls, cfg_path: str = "/shared/config/config.json") -> 'SharedConfig':
+        path = Path(cfg_path)
         if not path.exists():
             raise FileNotFoundError(f"config.json not found at {path}")
         with open(path) as f:
