@@ -7,6 +7,7 @@ import (
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
 	mb "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
@@ -38,8 +39,9 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) err
 	log.Printf("AI Summary: %+v\n", result)
 
 	locationMap, geocodeErr := p.Geocoder.GetBatchCoordinates(result.EnLocations)
+
 	if geocodeErr != nil {
-		return fmt.Errorf("error fetching coordinates: %w", geocodeErr)
+		return p.handleGeocodeError(geocodeErr)
 	}
 
 	var locations []models.Location
@@ -71,4 +73,21 @@ func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) err
 
 	log.Printf("Published the processed event to %s", p.Cfg.ProcessedEventsExchange)
 	return nil
+}
+
+func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
+	var result error = nil
+
+	switch err.Code {
+	case geocodeerrors.ErrCodeNetworkError:
+	case geocodeerrors.ErrCodeInvalidRequest:
+	case geocodeerrors.ErrCodeInternalError:
+	case geocodeerrors.ErrCodeParsingError:
+		result = fmt.Errorf("Error of type %s occoured while geocoding: %v", err.Code, err)
+	case geocodeerrors.ErrCodeFiltered:
+	case geocodeerrors.ErrCodeNotFound:
+		result = nil
+	}
+
+	return result
 }
