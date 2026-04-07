@@ -60,7 +60,9 @@ services:
     volumes:
       - ./services/backend:/app
       - ./services/shared/python:/app/services/shared/python
+      - ./services/shared/config:/shared/config
     env_file:
+      - ./services/shared/config/secrets.env
       - ./services/backend/.env
     environment:
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
@@ -93,11 +95,12 @@ services:
     container_name: processing
     volumes:
       - ./services/processing:/app
+      - ./services/shared/config:/shared/config
+    env_file:
+      - ./services/shared/config/secrets.env
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - RABBIT_QUEUE=${RABBIT_QUEUE}
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - WORKER_COUNT=5
     depends_on:
       rabbitmq:
@@ -115,12 +118,12 @@ services:
     volumes:
       - ./services/ingestion/telegram-scraper:/app
       - ./services/shared/python:/app/services/shared/python
+      - ./services/shared/config:/shared/config
     env_file:
+      - ./services/shared/config/secrets.env
       - ./services/ingestion/telegram-scraper/.env
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - RABBIT_HOST=rabbitmq
-      - RABBIT_QUEUE=${RABBIT_QUEUE}
     depends_on:
       rabbitmq:
         condition: service_healthy
