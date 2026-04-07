@@ -15,7 +15,7 @@ type GeocoderFunction func(string) (models.Geocode, *geocodeerrors.GeocodeError)
 // Implementations must be safe for concurrent use by multiple goroutines.
 type GeocodeCache interface {
 	IndexGeocode(ctx context.Context, locationText string, geocode models.Geocode) (error, string)
-	GetGeocode(ctx context.Context, index string, location string) (models.GeocodeCache, error)
+	GetGeocode(ctx context.Context, location string) (models.GeocodeCache, error)
 }
 
 type GeocodingService struct {

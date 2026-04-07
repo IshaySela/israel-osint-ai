@@ -94,14 +94,14 @@ func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, locationText s
 	return nil, res.Id_
 }
 
-func (esc *ElasticsearchClient) GetGeocode(ctx context.Context, index string, location string) (models.GeocodeCache, error) {
+func (esc *ElasticsearchClient) GetGeocode(ctx context.Context, location string) (models.GeocodeCache, error) {
 	if esc.client == nil {
 		return models.GeocodeCache{}, fmt.Errorf("elasticsearch client not initialized, call Setup first")
 	}
 
 	searchResult, err := esc.client.
 		Search().
-		Index(index).
+		Index(esc.cfg.ElasticsearchGeocodeIndex).
 		Request(&search.Request{
 			Query: &types.Query{
 				Match: map[string]types.MatchQuery{
