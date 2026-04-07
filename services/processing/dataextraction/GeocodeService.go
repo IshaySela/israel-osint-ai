@@ -3,7 +3,6 @@ package dataextraction
 import (
 	"context"
 	"log"
-	"sync"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
@@ -19,9 +18,7 @@ type GeocodeCache interface {
 }
 
 type GeocodingService struct {
-	mu           sync.RWMutex
 	ctx          context.Context
-	cache        map[string]models.Geocode
 	geocoder     GeocoderFunction
 	geocodeCache GeocodeCache
 }
@@ -31,22 +28,22 @@ func (s *GeocodingService) GetCoordinate(location string) (models.Geocode, *geoc
 		return models.Geocode{}, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeInvalidRequest, "location string cannot be empty", nil)
 	}
 
-	s.mu.RLock()
-	cached, exists := s.cache[location]
-	s.mu.RUnlock()
+	cached, err := s.geocodeCache.GetGeocode(s.ctx, location)
 
-	if exists {
-		return cached, nil
+	if err == nil {
+		return cached.ToGeocode(), nil
 	}
 
-	geocode, err := s.geocoder(location)
+	geocode, gecErr := s.geocoder(location)
+	if gecErr != nil {
+		return models.Geocode{}, gecErr
+	}
+
+	err, _ = s.geocodeCache.IndexGeocode(s.ctx, location, geocode)
+
 	if err != nil {
-		return models.Geocode{}, err
+		log.Printf("Error while caching result of geocode (%s): %v", location, err)
 	}
-
-	s.mu.Lock()
-	s.cache[location] = geocode
-	s.mu.Unlock()
 
 	return geocode, nil
 }
@@ -63,24 +60,24 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]m
 			continue
 		}
 
-		s.mu.RLock()
-		cached, exists := s.cache[location]
-		s.mu.RUnlock()
+		cached, err := s.geocodeCache.GetGeocode(s.ctx, location)
 
-		if exists {
-			results[location] = cached
+		if err == nil {
+			results[location] = cached.ToGeocode()
 			continue
 		}
 
-		geocode, err := s.geocoder(location)
+		geocode, gecErr := s.geocoder(location)
+		if gecErr != nil {
+			log.Printf("Warning: failed to fetch %s: %v\n", location, gecErr)
+			continue
+		}
+
+		err, _ = s.geocodeCache.IndexGeocode(s.ctx, location, geocode)
+
 		if err != nil {
-			log.Printf("Warning: failed to fetch %s: %v\n", location, err)
-			continue
+			log.Printf("Error while caching result of geocode (%s): %v", location, err)
 		}
-
-		s.mu.Lock()
-		s.cache[location] = geocode
-		s.mu.Unlock()
 
 		results[location] = geocode
 	}
