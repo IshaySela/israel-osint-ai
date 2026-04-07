@@ -43,6 +43,15 @@ def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:
     es: ESClient = get_es_client()
     return es.get_latest_events(size=50)
 
+@query.field("events")
+def resolve_events(*_: Any, fromHoursAgo: int, toHoursAgo: int) -> List[Dict[str, Any]]:
+    from_h = max(1, min(72, fromHoursAgo))
+    to_h   = max(0, min(71, toHoursAgo))
+    if to_h >= from_h:
+        logger.warning(f"Invalid time range: fromHoursAgo={from_h}, toHoursAgo={to_h}")
+        return []
+    return get_es_client().get_events_in_range(from_hours_ago=from_h, to_hours_ago=to_h)
+
 schema: Any = make_executable_schema(type_defs, query)
 graphql_app = GraphQL(schema, debug=cfg.debug)
 
