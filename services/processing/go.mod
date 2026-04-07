@@ -7,6 +7,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/openai/openai-go/v3 v3.27.0
 	github.com/rabbitmq/amqp091-go v1.10.0
+	golang.org/x/time v0.15.0
 )
 
 require (
@@ -20,5 +21,4 @@ require (
 	go.opentelemetry.io/otel v1.28.0 // indirect
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
-	golang.org/x/time v0.15.0 // indirect
 )
