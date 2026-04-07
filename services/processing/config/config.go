@@ -1,6 +1,7 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -30,6 +31,36 @@ var (
 	once     sync.Once
 )
 
+type sharedConfig struct {
+	Messaging struct {
+		Queue                   string `json:"queue"`
+		RawEventsExchange       string `json:"raw_events_exchange"`
+		ProcessedEventsExchange string `json:"processed_events_exchange"`
+		DLXExchange             string `json:"dlx_exchange"`
+		DLXQueue                string `json:"dlx_queue"`
+	} `json:"messaging"`
+	Elasticsearch struct {
+		Index        string `json:"index"`
+		GeocodeIndex string `json:"geocode_index"`
+	} `json:"elasticsearch"`
+	OpenAI struct {
+		Model string `json:"model"`
+	} `json:"openai"`
+}
+
+func loadSharedConfig() sharedConfig {
+	var cfg sharedConfig
+	data, err := os.ReadFile("/shared/config/config.json")
+	if err != nil {
+		log.Println("No shared config.json found, using defaults")
+		return cfg
+	}
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		log.Printf("Failed to parse shared config.json: %v", err)
+	}
+	return cfg
+}
+
 func LoadConfig() *Config {
 	once.Do(func() {
 		err := godotenv.Load()
@@ -37,18 +68,20 @@ func LoadConfig() *Config {
 			log.Println("No .env file found, reading from environment variables")
 		}
 
+		shared := loadSharedConfig()
+
 		instance = &Config{
 			RabbitMQURL:               getEnv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/"),
-			RabbitMQQueue:             getEnv("RABBITMQ_QUEUE", "osint_events"),
-			RawEventsExchange:         getEnv("RAW_EVENTS_EXCHANGE", "raw_events"),
-			ProcessedEventsExchange:   getEnv("PROCESSED_EVENTS_EXCHANGE", "processed_events"),
-			DLXExchange:               getEnv("DLX_EXCHANGE", "dead_letter"),
-			DLXQueue:                  getEnv("DLX_QUEUE", "dead_letter_queue"),
+			RabbitMQQueue:             getEnv("RABBITMQ_QUEUE", shared.Messaging.Queue),
+			RawEventsExchange:         getEnv("RAW_EVENTS_EXCHANGE", shared.Messaging.RawEventsExchange),
+			ProcessedEventsExchange:   getEnv("PROCESSED_EVENTS_EXCHANGE", shared.Messaging.ProcessedEventsExchange),
+			DLXExchange:               getEnv("DLX_EXCHANGE", shared.Messaging.DLXExchange),
+			DLXQueue:                  getEnv("DLX_QUEUE", shared.Messaging.DLXQueue),
 			ElasticsearchURLs:         strings.Split(getEnv("ELASTICSEARCH_URLS", "http://localhost:9200"), ","),
-			ProcessedEventsIndex:      getEnv("ELASTICSEARCH_INDEX", "osint_events"),
-			ElasticsearchGeocodeIndex: getEnv("ELASTICSEARCH_GEOCODE_INDEX", "geocode_cache"),
+			ProcessedEventsIndex:      getEnv("ELASTICSEARCH_INDEX", shared.Elasticsearch.Index),
+			ElasticsearchGeocodeIndex: getEnv("ELASTICSEARCH_GEOCODE_INDEX", shared.Elasticsearch.GeocodeIndex),
 			OpenAIKey:                 getEnv("OPENAI_API_KEY", ""),
-			OpenAIModel:               getEnv("OPENAI_MODEL", "gpt-5-mini"),
+			OpenAIModel:               getEnv("OPENAI_MODEL", shared.OpenAI.Model),
 			WorkerCount:               getEnvInt("WORKER_COUNT", 5),
 		}
 	})
