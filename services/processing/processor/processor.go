@@ -86,6 +86,8 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 		result = fmt.Errorf("Error of type %s occoured while geocoding: %v", err.Code, err)
 	case geocodeerrors.ErrCodeFiltered:
 	case geocodeerrors.ErrCodeNotFound:
+		// If a message is filtered / not found then the processor should not
+		// return an error - its the inteded behaviour.
 		result = nil
 	}
 
