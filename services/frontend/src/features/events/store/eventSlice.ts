@@ -14,16 +14,23 @@ interface Event {
   locations: Location[];
 }
 
+interface TimeRange {
+  fromHoursAgo: number;
+  toHoursAgo: number;
+}
+
 interface EventState {
   events: Event[];
   selectedEvent: Event | null;
   searchQuery: string;
+  timeRange: TimeRange;
 }
 
 const initialState: EventState = {
   events: [],
   selectedEvent: null,
   searchQuery: '',
+  timeRange: { fromHoursAgo: 24, toHoursAgo: 0 },
 };
 
 export const eventSlice = createSlice({
@@ -48,9 +55,12 @@ export const eventSlice = createSlice({
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
     },
+    setTimeRange: (state, action: PayloadAction<TimeRange>) => {
+      state.timeRange = action.payload;
+    },
   },
 });
 
-export const { setEvents, addEvent, setSelectedEvent, setSearchQuery } = eventSlice.actions;
+export const { setEvents, addEvent, setSelectedEvent, setSearchQuery, setTimeRange } = eventSlice.actions;
 
 export default eventSlice.reducer;
