@@ -44,14 +44,15 @@ class ESClient:
 
     def get_events_in_range(self, from_hours_ago: int, to_hours_ago: int, size: int = 200) -> List[Dict[str, Any]]:
         now = datetime.now(timezone.utc)
-        range_from = (now - timedelta(hours=from_hours_ago)).strftime('%Y-%m-%dT%H:%M:%SZ')
-        range_to   = (now - timedelta(hours=to_hours_ago)).strftime('%Y-%m-%dT%H:%M:%SZ')
+        range_from = (now - timedelta(hours=from_hours_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
+        range_to   = (now - timedelta(hours=to_hours_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
         try:
             query: Dict[str, Any] = {
                 "query": {"range": {"timestamp.keyword": {"gte": range_from, "lte": range_to}}},
                 "sort": [{"timestamp.keyword": {"order": "desc"}}],
                 "size": size
             }
+            
             response: Any = self.client.search(index=self.index, **query)
             events: List[Dict[str, Any]] = []
             hits = response.get('hits', {}).get('hits', [])
