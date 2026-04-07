@@ -11,6 +11,8 @@ import (
 
 type GeocoderFunction func(string) (models.Geocode, *geocodeerrors.GeocodeError)
 
+// GeocodeCache is a persistent cache for geocode results.
+// Implementations must be safe for concurrent use by multiple goroutines.
 type GeocodeCache interface {
 	IndexGeocode(ctx context.Context, locationText string, geocode models.Geocode) (error, string)
 	GetGeocode(ctx context.Context, index string, location string) (models.GeocodeCache, error)
