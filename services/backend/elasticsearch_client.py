@@ -42,10 +42,10 @@ class ESClient:
             logger.error(f"Error fetching from Elasticsearch: {e}")
             return []
 
-    def get_events_in_range(self, from_hours_ago: int, to_hours_ago: int, size: int = 200) -> List[Dict[str, Any]]:
+    def get_events_in_range(self, from_minutes_ago: int, to_minutes_ago: int, size: int = 200) -> List[Dict[str, Any]]:
         now = datetime.now(timezone.utc)
-        range_from = (now - timedelta(hours=from_hours_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
-        range_to   = (now - timedelta(hours=to_hours_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
+        range_from = (now - timedelta(minutes=from_minutes_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
+        range_to   = (now - timedelta(minutes=to_minutes_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
         try:
             query: Dict[str, Any] = {
                 "query": {"range": {"timestamp.keyword": {"gte": range_from, "lte": range_to}}},

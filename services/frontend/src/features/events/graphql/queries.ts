@@ -16,8 +16,8 @@ export const GET_LATEST_EVENTS = gql`
 `;
 
 export const GET_EVENTS = gql`
-  query GetEvents($fromHoursAgo: Int!, $toHoursAgo: Int!) {
-    events(fromHoursAgo: $fromHoursAgo, toHoursAgo: $toHoursAgo) {
+  query GetEvents($fromMinutesAgo: Int!, $toMinutesAgo: Int!) {
+    events(fromMinutesAgo: $fromMinutesAgo, toMinutesAgo: $toMinutesAgo) {
       raw_message
       summary
       timestamp

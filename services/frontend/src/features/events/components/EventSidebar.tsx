@@ -17,9 +17,9 @@ interface GetEventsData {
 const EventSidebar: React.FC = () => {
   const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
-  const { fromHoursAgo, toHoursAgo } = useSelector((state: RootState) => state.event.timeRange);
+  const { fromMinutesAgo, toMinutesAgo } = useSelector((state: RootState) => state.event.timeRange);
   const { loading, error, data } = useQuery<GetEventsData>(GET_EVENTS, {
-    variables: { fromHoursAgo, toHoursAgo },
+    variables: { fromMinutesAgo, toMinutesAgo },
     fetchPolicy: 'network-only',
   });
 

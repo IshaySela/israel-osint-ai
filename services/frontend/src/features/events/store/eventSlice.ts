@@ -15,8 +15,8 @@ interface Event {
 }
 
 interface TimeRange {
-  fromHoursAgo: number;
-  toHoursAgo: number;
+  fromMinutesAgo: number;
+  toMinutesAgo: number;
 }
 
 interface EventState {
@@ -30,7 +30,7 @@ const initialState: EventState = {
   events: [],
   selectedEvent: null,
   searchQuery: '',
-  timeRange: { fromHoursAgo: 24, toHoursAgo: 0 },
+  timeRange: { fromMinutesAgo: 1440, toMinutesAgo: 0 },
 };
 
 export const eventSlice = createSlice({

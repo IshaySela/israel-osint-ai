@@ -3,28 +3,46 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setTimeRange } from '../store/eventSlice';
 import type { RootState } from '../../../store';
 
-const MAX_HOURS = 72;
+// Logarithmic tick scale in minutes: finer steps near "now", coarser for large ranges
+const TICKS = [0, 15, 30, 45, 60, 90, 120, 180, 240, 360, 480, 720, 1080, 1440, 2160, 2880, 4320];
+const MAX_IDX = TICKS.length - 1;
+
+function minutesToIdx(minutes: number): number {
+  let best = 0;
+  let bestDist = Infinity;
+  for (let i = 0; i < TICKS.length; i++) {
+    const d = Math.abs(TICKS[i] - minutes);
+    if (d < bestDist) { bestDist = d; best = i; }
+  }
+  return best;
+}
+
+function formatMinutes(m: number): string {
+  if (m === 0) return 'now';
+  if (m < 60) return `${m}m`;
+  const h = m / 60;
+  return Number.isInteger(h) ? `${h}h` : `${Math.floor(h)}h${m % 60}m`;
+}
 
 const TimeRangeSlider: React.FC = () => {
   const dispatch = useDispatch();
-  const { fromHoursAgo, toHoursAgo } = useSelector(
+  const { fromMinutesAgo, toMinutesAgo } = useSelector(
     (state: RootState) => state.event.timeRange
   );
 
-  const [localFrom, setLocalFrom] = useState(fromHoursAgo);
-  const [localTo, setLocalTo] = useState(toHoursAgo);
+  const [localFromIdx, setLocalFromIdx] = useState(() => minutesToIdx(fromMinutesAgo));
+  const [localToIdx, setLocalToIdx] = useState(() => minutesToIdx(toMinutesAgo));
 
-  // Sync local state if Redux changes externally
-  useEffect(() => { setLocalFrom(fromHoursAgo); }, [fromHoursAgo]);
-  useEffect(() => { setLocalTo(toHoursAgo); }, [toHoursAgo]);
+  useEffect(() => { setLocalFromIdx(minutesToIdx(fromMinutesAgo)); }, [fromMinutesAgo]);
+  useEffect(() => { setLocalToIdx(minutesToIdx(toMinutesAgo)); }, [toMinutesAgo]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const debounced = useCallback(
-    (from: number, to: number) => {
+    (fromIdx: number, toIdx: number) => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
-        dispatch(setTimeRange({ fromHoursAgo: from, toHoursAgo: to }));
+        dispatch(setTimeRange({ fromMinutesAgo: TICKS[fromIdx], toMinutesAgo: TICKS[toIdx] }));
       }, 150);
     },
     [dispatch]
@@ -32,34 +50,34 @@ const TimeRangeSlider: React.FC = () => {
 
   const handleFromChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = Number(e.target.value);
-      if (val > localTo) {
-        setLocalFrom(val);
-        debounced(val, localTo);
+      const idx = Number(e.target.value);
+      if (idx > localToIdx) {
+        setLocalFromIdx(idx);
+        debounced(idx, localToIdx);
       }
     },
-    [localTo, debounced]
+    [localToIdx, debounced]
   );
 
   const handleToChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = Number(e.target.value);
-      if (val < localFrom) {
-        setLocalTo(val);
-        debounced(localFrom, val);
+      const idx = Number(e.target.value);
+      if (idx < localFromIdx) {
+        setLocalToIdx(idx);
+        debounced(localFromIdx, idx);
       }
     },
-    [localFrom, debounced]
+    [localFromIdx, debounced]
   );
 
-  const label =
-    localTo === 0
-      ? `Last ${localFrom}h`
-      : `${localTo}h\u2013${localFrom}h ago`;
+  const fromMin = TICKS[localFromIdx];
+  const toMin = TICKS[localToIdx];
+  const label = toMin === 0
+    ? `Last ${formatMinutes(fromMin)}`
+    : `${formatMinutes(toMin)}\u2013${formatMinutes(fromMin)} ago`;
 
-  // Track fill: slider goes 0 (left=now) to 72 (right=72h ago)
-  const leftPct = (localTo / MAX_HOURS) * 100;
-  const rightPct = ((MAX_HOURS - localFrom) / MAX_HOURS) * 100;
+  const leftPct = (localToIdx / MAX_IDX) * 100;
+  const rightPct = ((MAX_IDX - localFromIdx) / MAX_IDX) * 100;
 
   const thumbClass =
     'absolute w-full appearance-none bg-transparent pointer-events-none ' +
@@ -87,28 +105,28 @@ const TimeRangeSlider: React.FC = () => {
           className="absolute h-1 bg-cyan-500/60 rounded-full"
           style={{ left: `${leftPct}%`, right: `${rightPct}%` }}
         />
-        {/* "to" handle — closer to now (lower value) */}
+        {/* "to" handle — closer to now */}
         <input
           type="range"
           min={0}
-          max={MAX_HOURS}
-          value={localTo}
-          onChange={handleToChange}
+          max={MAX_IDX}
           step={1}
+          value={localToIdx}
+          onChange={handleToChange}
           className={
             thumbClass +
             '[&::-webkit-slider-thumb]:bg-slate-300 ' +
             '[&::-webkit-slider-thumb]:shadow-[0_0_4px_rgba(255,255,255,0.4)]'
           }
         />
-        {/* "from" handle — further back (higher value) */}
+        {/* "from" handle — further back */}
         <input
           type="range"
           min={0}
-          max={MAX_HOURS}
-          value={localFrom}
-          onChange={handleFromChange}
+          max={MAX_IDX}
           step={1}
+          value={localFromIdx}
+          onChange={handleFromChange}
           className={
             thumbClass +
             '[&::-webkit-slider-thumb]:bg-cyan-400 ' +
