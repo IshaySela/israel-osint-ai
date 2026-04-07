@@ -1,4 +1,4 @@
-package dataextraction
+package geocodeerrors
 
 import "fmt"
 

@@ -1,30 +1,32 @@
 package dataextraction
 
 import (
+	"context"
 	"log"
 	"sync"
 
+	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 )
 
-type GeocoderFunction func(string) (models.Geocode, *GeocodeError)
+type GeocoderFunction func(string) (models.Geocode, *geocodeerrors.GeocodeError)
+
+type GeocodeCache interface {
+	IndexGeocode(ctx context.Context, locationText string, geocode models.Geocode) (error, string)
+	GetGeocode(ctx context.Context, index string, location string) (models.GeocodeCache, error)
+}
 
 type GeocodingService struct {
-	mu       sync.RWMutex
-	cache    map[string]models.Geocode
-	geocoder GeocoderFunction
+	mu           sync.RWMutex
+	ctx          context.Context
+	cache        map[string]models.Geocode
+	geocoder     GeocoderFunction
+	geocodeCache GeocodeCache
 }
 
-func NewGeocodingService(geocoder GeocoderFunction) *GeocodingService {
-	return &GeocodingService{
-		cache:    make(map[string]models.Geocode),
-		geocoder: geocoder,
-	}
-}
-
-func (s *GeocodingService) GetCoordinate(location string) (models.Geocode, *GeocodeError) {
+func (s *GeocodingService) GetCoordinate(location string) (models.Geocode, *geocodeerrors.GeocodeError) {
 	if location == "" {
-		return models.Geocode{}, NewGeocodeError(ErrCodeInvalidRequest, "location string cannot be empty", nil)
+		return models.Geocode{}, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeInvalidRequest, "location string cannot be empty", nil)
 	}
 
 	s.mu.RLock()
@@ -47,9 +49,9 @@ func (s *GeocodingService) GetCoordinate(location string) (models.Geocode, *Geoc
 	return geocode, nil
 }
 
-func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]models.Geocode, *GeocodeError) {
+func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]models.Geocode, *geocodeerrors.GeocodeError) {
 	if len(locations) == 0 {
-		return nil, NewGeocodeError(ErrCodeInvalidRequest, "locations list cannot be empty", nil)
+		return nil, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeInvalidRequest, "locations list cannot be empty", nil)
 	}
 
 	results := make(map[string]models.Geocode)
@@ -82,7 +84,7 @@ func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]m
 	}
 
 	if len(results) == 0 {
-		return nil, NewGeocodeError(ErrCodeNotFound, "no locations found", nil)
+		return nil, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeNotFound, "no locations found", nil)
 	}
 
 	return results, nil

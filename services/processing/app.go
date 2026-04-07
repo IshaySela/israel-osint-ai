@@ -7,9 +7,7 @@ import (
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
-	nominatim "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/nominatimgeocoder"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/IshaySela/israel-osint-ai/services/processing/processor"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
 	"github.com/IshaySela/israel-osint-ai/services/processing/workerpool"
@@ -21,13 +19,18 @@ func main() {
 	ctx := context.Background()
 	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
 
-	geocoder := de.NewGeocodingService(func(location string) (models.Geocode, *de.GeocodeError) {
-		return nominatim.NominatimSearch(location, rateLimiter)
-	})
-
 	esClient := storage.NewElasticsearchClient(cfg)
 	if err := esClient.Setup(cfg.ElasticsearchURLs); err != nil {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
+	}
+
+	geocoder, err := de.NewGeocodingServiceBuilder().
+		WithContext(ctx).
+		WithNominatim(rateLimiter).
+		WithElasticsearchCache(esClient).
+		Build()
+	if err != nil {
+		log.Fatalf("Error building geocoding service: %v", err)
 	}
 
 	pool := workerpool.NewWorkerPool(cfg.WorkerCount, 100)
