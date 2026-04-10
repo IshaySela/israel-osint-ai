@@ -4,6 +4,7 @@
 The system ingests, processes, and visualizes OSINT data from Telegram channels on an interactive map in real time.
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 60, 'rankSpacing': 100}}}%%
 graph TD
     %% Ingestion Layer
     subgraph Ingestion ["Ingestion Layer"]
@@ -16,6 +17,7 @@ graph TD
         RE{{raw_events exchange}}
         PE{{processed_events exchange}}
         DLX{{dead_letter exchange}}
+        RE ~~~ PE
     end
 
     %% Processing Layer
