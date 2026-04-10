@@ -30,7 +30,7 @@ func NewProcessor(cfg *config.Config, geocoder *de.GeocodingService, esClient *s
 }
 
 func (p *Processor) Process(ctx context.Context, rawEvent models.RawOsintEvent) error {
-	var processedEvent storage.ProcessedEvent
+	var processedEvent storage.IProcessedEvent
 	var err error
 
 	switch event := rawEvent.(type) {
@@ -74,8 +74,8 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 	return result
 }
 
-func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context.Context) (storage.ProcessedEvent, error) {
-	var processedEvent storage.ProcessedEvent
+func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context.Context) (storage.IProcessedEvent, error) {
+	var processedEvent storage.ProcessedTelegramEvent
 
 	result, err := de.CreateAgentSummary(te.Text, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
 	if err != nil {
@@ -99,14 +99,16 @@ func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context
 		})
 	}
 
-	processedEvent = storage.ProcessedEvent{
-		RawMessage:      te.Text,
-		Summary:         result.HeSummary,
-		Locations:       locations,
-		TimestampEpoch:  models.ParseToEpoch(te.Timestamp),
+	processedEvent = storage.ProcessedTelegramEvent{
+		ProcessedEvent: storage.ProcessedEvent{
+			RawMessage:     te.Text,
+			Summary:        result.HeSummary,
+			Locations:      locations,
+			TimestampEpoch: models.ParseToEpoch(te.Timestamp),
+			Source:         te.Source,
+		},
 		ChannelTitle:    te.ChannelTitle,
 		ChannelMainLang: te.ChannelMainLang,
-		Source:          te.Source,
 	}
 
 	return processedEvent, nil

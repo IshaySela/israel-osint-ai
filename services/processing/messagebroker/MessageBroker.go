@@ -153,16 +153,8 @@ func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte)
 	)
 }
 
-func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent, dbId string) error {
-	msg := models.ProcessedEventMessage{
-		DbId:            dbId,
-		Summary:         ev.Summary,
-		Locations:       ev.Locations,
-		TimestampEpoch:  ev.TimestampEpoch,
-		ChannelTitle:    ev.ChannelTitle,
-		ChannelMainLang: ev.ChannelMainLang,
-		Source:          ev.Source,
-	}
+func (rl *RabbitClient) PublishProcessedEvent(ev storage.IProcessedEvent, dbId string) error {
+	msg := CreateMessageFromEvent(ev, dbId)
 
 	body, err := json.Marshal(msg)
 	if err != nil {
