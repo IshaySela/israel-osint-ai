@@ -8,8 +8,7 @@ This project aims to ingest, process, and visualize OSINT data from various sour
 The main intent of the project is to create a fully working product using various technologies from end to end.
 
 ## How
-Multiple microservices that activley ingest OSINT sources. The microservice utilize the OpenAI API in order to filter 
-events by relevance, communicate via RabbitMQ and display the events on a map using React client.
+Dedicated microservices ingest OSINT sources, filter events by relevance via the OpenAI API, and publish them to RabbitMQ. A processing service consumes, geocodes, and indexes events into Elasticsearch. A GraphQL backend exposes the data to a React frontend that renders events on an interactive map.
 
 ## Development Startup
 
