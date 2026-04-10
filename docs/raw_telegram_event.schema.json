@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RawTelegramEvent",
+  "description": "Unprocessed Telegram message event",
+  "allOf": [
+    { "$ref": "./raw_osint_event.schema.json" }
+  ],
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "const": "telegram"
+    },
+    "text": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "chat_id": {
+      "type": "integer"
+    },
+    "channel_title": {
+      "type": "string"
+    },
+    "message_id": {
+      "type": "integer"
+    }
+  },
+  "required": ["id", "timestamp", "source", "text", "event_type", "chat_id", "channel_title", "message_id"]
+}

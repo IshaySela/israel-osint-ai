@@ -1,6 +1,9 @@
 node_modules
 GEMINI.md
+CLAUDE.md
 .env
+**/.env
+**/*.env
 venv
 .vscode
 __pycache__

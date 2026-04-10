@@ -1,86 +1,68 @@
 package storage
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
-	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
+	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
+	"github.com/elastic/go-elasticsearch/v8/typedapi/types"
 )
 
 type ElasticsearchClient struct {
-	client *elasticsearch.Client
+	client *elasticsearch.TypedClient
+	cfg    *config.Config
 }
 
-type ProcessedEvent struct {
-	RawMessage string                `json:"raw_message"`
-	Summary    string                `json:"summary"`
-	Locations  map[string]de.Geocode `json:"locations"`
-	Timestamp  string                `json:"timestamp"`
-}
-
-func NewElasticsearchClient() *ElasticsearchClient {
-	return &ElasticsearchClient{}
+func NewElasticsearchClient(cfg *config.Config) *ElasticsearchClient {
+	return &ElasticsearchClient{
+		cfg: cfg,
+	}
 }
 
 func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	cfg := elasticsearch.Config{
 		Addresses: addresses,
 	}
-	client, err := elasticsearch.NewClient(cfg)
+	client, err := elasticsearch.NewTypedClient(cfg)
 	if err != nil {
 		return fmt.Errorf("error creating the elasticsearch client: %w", err)
 	}
+	_, err = client.Ping().Do(context.TODO())
 
-	res, err := client.Info()
 	if err != nil {
-		return fmt.Errorf("error getting elasticsearch info: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return fmt.Errorf("error response from elasticsearch: %s", res.String())
+		return fmt.Errorf("Error connecting to elasticsearch: %w", err)
 	}
 
 	esc.client = client
 	return nil
 }
 
-func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, index string, event ProcessedEvent) error {
+func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event IProcessedEvent) (error, string) {
 	if esc.client == nil {
-		return fmt.Errorf("elasticsearch client not initialized, call Setup first")
+		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
 
-	data, err := json.Marshal(event)
+	res, err := esc.client.
+		Index(esc.cfg.ProcessedEventsIndex).
+		Document(event).
+		Do(ctx)
+
 	if err != nil {
-		return fmt.Errorf("error marshaling event: %w", err)
+		return fmt.Errorf("error indexing event to elasticsearch: %w", err), ""
 	}
 
-	res, err := esc.client.Index(
-		index,
-		bytes.NewReader(data),
-		esc.client.Index.WithContext(ctx),
-	)
-	if err != nil {
-		return fmt.Errorf("error indexing document: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return fmt.Errorf("error indexing document in elasticsearch: %s", res.String())
-	}
-
-	return nil
+	return nil, res.Id_
 }
 
-func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, locationText string, geocode de.Geocode) error {
+func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, locationText string, geocode models.Geocode) (error, string) {
 	if esc.client == nil {
-		return fmt.Errorf("elasticsearch client not initialized, call Setup first")
+		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
 
 	lat, _ := strconv.ParseFloat(geocode.Lat, 64)
@@ -93,24 +75,47 @@ func (esc *ElasticsearchClient) IndexGeocode(ctx context.Context, index string, 
 		Timestamp:    time.Now().Format(time.RFC3339),
 	}
 
-	data, err := json.Marshal(cache)
+	res, err := esc.client.
+		Index(esc.cfg.ElasticsearchGeocodeIndex).
+		Document(cache).
+		Do(ctx)
+
 	if err != nil {
-		return fmt.Errorf("error marshaling geocode cache: %w", err)
+		return fmt.Errorf("error indexing geocode cache: %w", err), ""
 	}
 
-	res, err := esc.client.Index(
-		index,
-		bytes.NewReader(data),
-		esc.client.Index.WithContext(ctx),
-	)
+	return nil, res.Id_
+}
+
+func (esc *ElasticsearchClient) GetGeocode(ctx context.Context, location string) (models.GeocodeCache, error) {
+	if esc.client == nil {
+		return models.GeocodeCache{}, fmt.Errorf("elasticsearch client not initialized, call Setup first")
+	}
+
+	searchResult, err := esc.client.
+		Search().
+		Index(esc.cfg.ElasticsearchGeocodeIndex).
+		Request(&search.Request{
+			Query: &types.Query{
+				Match: map[string]types.MatchQuery{
+					"location_text": {Query: location},
+				},
+			},
+		}).Do(ctx)
+
 	if err != nil {
-		return fmt.Errorf("error indexing geocode cache: %w", err)
-	}
-	defer res.Body.Close()
-
-	if res.IsError() {
-		return fmt.Errorf("error indexing geocode cache in elasticsearch: %s", res.String())
+		return models.GeocodeCache{}, fmt.Errorf("Could not find location in cache")
 	}
 
-	return nil
+	if searchResult.Hits.Total.Value == 0 {
+		return models.GeocodeCache{}, fmt.Errorf("Cache miss while retriving geocode from es")
+	}
+	var parsed models.GeocodeCache
+
+	err = json.Unmarshal(searchResult.Hits.Hits[0].Source_, &parsed)
+	if err != nil {
+		return models.GeocodeCache{}, fmt.Errorf("Error while parsing result from es %s", err.Error())
+	}
+
+	return parsed, nil
 }

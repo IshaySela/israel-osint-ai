@@ -3,57 +3,47 @@ package main
 import (
 	"context"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/IshaySela/israel-osint-ai/services/processing/config"
 	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
-	nominatim "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/nominatimgeocoder"
 	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	"github.com/IshaySela/israel-osint-ai/services/processing/processor"
 	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	"github.com/IshaySela/israel-osint-ai/services/processing/workerpool"
 	"golang.org/x/time/rate"
 )
 
 func main() {
 	cfg := config.LoadConfig()
-	var wg sync.WaitGroup
-	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
-	broker := MessageQueue.NewRabbitListener(cfg.RabbitMQURL, cfg.RabbitMQQueue)
-
-	log.Println("Starting message broker...")
 	ctx := context.Background()
+	rateLimiter := rate.NewLimiter(rate.Every(1100*time.Millisecond), 1)
 
-	geocoder := de.NewGeocodingService(func(location string) (de.Geocode, *de.GeocodeError) {
-		return nominatim.NominatimSearch(location, rateLimiter)
-	})
-
-	esClient := storage.NewElasticsearchClient()
-	err := esClient.Setup(cfg.ElasticsearchURLs)
-	if err != nil {
+	esClient := storage.NewElasticsearchClient(cfg)
+	if err := esClient.Setup(cfg.ElasticsearchURLs); err != nil {
 		log.Fatalf("Error setting up elasticsearch: %v", err)
 	}
 
-	proc := processor.NewProcessor(cfg, geocoder, esClient)
-	taskQueue := make(chan models.RawOsintEvent, 100)
+	geocoder, err := de.NewGeocodingServiceBuilder().
+		WithContext(ctx).
+		WithNominatim(rateLimiter).
+		WithElasticsearchCache(esClient).
+		Build()
+	if err != nil {
+		log.Fatalf("Error building geocoding service: %v", err)
+	}
+
+	pool := workerpool.NewWorkerPool(cfg.WorkerCount, 100)
+	broker := MessageQueue.NewRabbitClient(cfg, pool)
+	proc := processor.NewProcessor(cfg, geocoder, esClient, &broker)
 
 	log.Printf("Starting %d workers...\n", cfg.WorkerCount)
-	for i := 0; i < cfg.WorkerCount; i++ {
-		wg.Add(1)
-		go func() {
-			proc.StartWorker(ctx, taskQueue)
-			wg.Done()
-		}()
+	pool.Start()
+
+	log.Println("Starting message broker...")
+	if err := broker.ListenForRawEvents(ctx, proc); err != nil {
+		log.Fatalf("Error starting message broker: %v\n", err)
 	}
 
-	err = broker.Listen(func(event models.RawOsintEvent) {
-		taskQueue <- event
-	})
-
-	if err != nil {
-		log.Printf("Error starting message broker: %v\n", err)
-	}
-
-	wg.Wait()
+	pool.Wait()
 }

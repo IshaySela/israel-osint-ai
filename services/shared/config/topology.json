@@ -1,0 +1,21 @@
+{
+  "rabbitmq": {
+    "host": "rabbitmq",
+    "port": 5672,
+    "management_port": 15672,
+    "user": "guest",
+    "password": "guest"
+  },
+  "elasticsearch": {
+    "host": "elasticsearch",
+    "port": 9200
+  },
+  "backend": {
+    "host": "backend",
+    "port": 5000
+  },
+  "kibana": {
+    "host": "kibana",
+    "port": 5601
+  }
+}

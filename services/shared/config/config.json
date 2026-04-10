@@ -1,0 +1,16 @@
+{
+  "messaging": {
+    "queue": "osint_events",
+    "raw_events_exchange": "raw_events",
+    "processed_events_exchange": "processed_events",
+    "dlx_exchange": "dead_letter",
+    "dlx_queue": "dead_letter_queue"
+  },
+  "elasticsearch": {
+    "index": "osint_events",
+    "geocode_index": "geocode_cache"
+  },
+  "openai": {
+    "model": "gpt-4o-mini"
+  }
+}

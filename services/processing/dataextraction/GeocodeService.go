@@ -1,86 +1,73 @@
 package dataextraction
 
 import (
+	"context"
 	"log"
-	"sync"
+
+	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
+	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 )
 
-type GeocoderFunction func(string) (Geocode, *GeocodeError)
+type GeocoderFunction func(string) (models.Geocode, *geocodeerrors.GeocodeError)
+
+// GeocodeCache is a persistent cache for geocode results.
+// Implementations must be safe for concurrent use by multiple goroutines.
+type GeocodeCache interface {
+	IndexGeocode(ctx context.Context, locationText string, geocode models.Geocode) (error, string)
+	GetGeocode(ctx context.Context, location string) (models.GeocodeCache, error)
+}
 
 type GeocodingService struct {
-	mu       sync.RWMutex
-	cache    map[string]Geocode
-	geocoder GeocoderFunction
+	ctx          context.Context
+	geocoder     GeocoderFunction
+	geocodeCache GeocodeCache
 }
 
-func NewGeocodingService(geocoder GeocoderFunction) *GeocodingService {
-	return &GeocodingService{
-		cache:    make(map[string]Geocode),
-		geocoder: geocoder,
-	}
-}
-
-func (s *GeocodingService) GetCoordinate(location string) (Geocode, *GeocodeError) {
+func (s *GeocodingService) GetCoordinate(location string) (models.Geocode, *geocodeerrors.GeocodeError) {
 	if location == "" {
-		return Geocode{}, NewGeocodeError(ErrCodeInvalidRequest, "location string cannot be empty", nil)
+		return models.Geocode{}, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeInvalidRequest, "location string cannot be empty", nil)
 	}
 
-	s.mu.RLock()
-	cached, exists := s.cache[location]
-	s.mu.RUnlock()
+	cached, err := s.geocodeCache.GetGeocode(s.ctx, location)
 
-	if exists {
-		return cached, nil
+	if err == nil {
+		return cached.ToGeocode(), nil
 	}
 
-	geocode, err := s.geocoder(location)
+	geocode, gecErr := s.geocoder(location)
+	if gecErr != nil {
+		return models.Geocode{}, gecErr
+	}
+
+	err, _ = s.geocodeCache.IndexGeocode(s.ctx, location, geocode)
+
 	if err != nil {
-		return Geocode{}, err
+		log.Printf("Error while caching result of geocode (%s): %v", location, err)
 	}
-
-	s.mu.Lock()
-	s.cache[location] = geocode
-	s.mu.Unlock()
 
 	return geocode, nil
 }
 
-func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]Geocode, *GeocodeError) {
+func (s *GeocodingService) GetBatchCoordinates(locations []string) (map[string]models.Geocode, *geocodeerrors.GeocodeError) {
 	if len(locations) == 0 {
-		return nil, NewGeocodeError(ErrCodeInvalidRequest, "locations list cannot be empty", nil)
+		return nil, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeInvalidRequest, "locations list cannot be empty", nil)
 	}
 
-	results := make(map[string]Geocode)
+	results := make(map[string]models.Geocode)
 
 	for _, location := range locations {
-		if location == "" {
+
+		geocode, gecErr := s.GetCoordinate(location)
+		if gecErr != nil {
+			log.Printf("Warning: failed to fetch %s: %v\n", location, gecErr)
 			continue
 		}
-
-		s.mu.RLock()
-		cached, exists := s.cache[location]
-		s.mu.RUnlock()
-
-		if exists {
-			results[location] = cached
-			continue
-		}
-
-		geocode, err := s.geocoder(location)
-		if err != nil {
-			log.Printf("Warning: failed to fetch %s: %v\n", location, err)
-			continue
-		}
-
-		s.mu.Lock()
-		s.cache[location] = geocode
-		s.mu.Unlock()
 
 		results[location] = geocode
 	}
 
 	if len(results) == 0 {
-		return nil, NewGeocodeError(ErrCodeNotFound, "no locations found", nil)
+		return nil, geocodeerrors.NewGeocodeError(geocodeerrors.ErrCodeNotFound, "no locations found", nil)
 	}
 
 	return results, nil

@@ -73,10 +73,10 @@ const EventMap: React.FC = () => {
 
         {events.map((event, eventIdx) => 
           event.locations.map((loc, locIdx) => {
-            const isSelected = selectedEvent?.timestamp === event.timestamp && selectedEvent?.raw_message === event.raw_message;
+            const isSelected = selectedEvent?.timestamp_epoch === event.timestamp_epoch && selectedEvent?.raw_message === event.raw_message;
             return (
               <Marker
-                key={`${event.timestamp}-${eventIdx}-${locIdx}`}
+                key={`${event.timestamp_epoch}-${eventIdx}-${locIdx}`}
                 position={[parseFloat(loc.lat), parseFloat(loc.lon)]}
                 icon={createPulseIcon(isSelected)}
                 eventHandlers={{
@@ -88,7 +88,7 @@ const EventMap: React.FC = () => {
                     <h3 className="font-bold text-slate-900 mb-1">{loc.name}</h3>
                     <p className="text-xs text-slate-700">{event.summary}</p>
                     <span className="text-[10px] text-slate-500 font-mono mt-2 block">
-                      {new Date(event.timestamp).toLocaleString('he-IL')}
+                      {new Date(event.timestamp_epoch * 1000).toLocaleString('he-IL')}
                     </span>
                   </div>
                 </Popup>

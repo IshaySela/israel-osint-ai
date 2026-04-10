@@ -5,6 +5,8 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+      - xpack.graph.enabled=false
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - "9200:9200"
@@ -52,16 +54,23 @@ services:
 
   backend:
     build:
-      context: ./services/backend
-      dockerfile: Dockerfile.dev
+      context: ./services
+      dockerfile: ./backend/Dockerfile.dev
     container_name: backend
     ports:
       - "5000:5000"
     volumes:
       - ./services/backend:/app
+      - ./services/shared/python:/app/services/shared/python
+      - ./services/shared/config:/shared/config
+    env_file:
+      - ./services/shared/config/secrets.env
+      - ./services/backend/.env
     environment:
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
       - HOST=0.0.0.0
+      - SHARED_TOPOLOGY_JSON=/shared/config/topology.json
+      - SHARED_CONFIG_JSON=/shared/config/config.json
     depends_on:
       elasticsearch:
         condition: service_healthy
@@ -90,12 +99,15 @@ services:
     container_name: processing
     volumes:
       - ./services/processing:/app
+      - ./services/shared/config:/shared/config
+    env_file:
+      - ./services/shared/config/secrets.env
     environment:
       - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
-      - RABBIT_QUEUE=${RABBIT_QUEUE}
       - ELASTICSEARCH_URLS=http://elasticsearch:9200
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - WORKER_COUNT=5
+      - SHARED_TOPOLOGY_JSON=/shared/config/topology.json
+      - SHARED_CONFIG_JSON=/shared/config/config.json
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -106,17 +118,20 @@ services:
 
   telegram-scraper:
     build:
-      context: ./services/ingestion/telegram-scraper
-      dockerfile: Dockerfile.dev
+      context: ./services
+      dockerfile: ./ingestion/telegram-scraper/Dockerfile.dev
     container_name: telegram-scraper
     volumes:
       - ./services/ingestion/telegram-scraper:/app
+      - ./services/shared/python:/app/services/shared/python
+      - ./services/shared/config:/shared/config
     env_file:
+      - ./services/shared/config/secrets.env
       - ./services/ingestion/telegram-scraper/.env
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - RABBIT_HOST=rabbitmq
-      - RABBIT_QUEUE=${RABBIT_QUEUE}
+      - SHARED_TOPOLOGY_JSON=/shared/config/topology.json
+      - SHARED_CONFIG_JSON=/shared/config/config.json
     depends_on:
       rabbitmq:
         condition: service_healthy

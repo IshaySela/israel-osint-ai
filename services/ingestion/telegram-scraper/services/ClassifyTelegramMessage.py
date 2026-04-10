@@ -14,13 +14,15 @@ class EventsDescription(TypedDict):
     attack: str
     missle_hit: str
     not_relevant: str
+    red_alert: str
     
 eventsDescription: EventsDescription = {
-    "rocket_fire": "The text indicates the launch, interception, or impact of rockets, missiles, or mortar fire.",
-    "shooting": "The text indicates a kinetic engagement involving firearms or small arms fire.",
+    "rocket_fire": "The text indicates the launch or interception of rockets, missiles, or mortar fire.",
+    "shooting": "The text indicates a usage of firearms fire in a security settings (not criminal)",
     "missle_hit": "Any place that was hit by a missile or rocket.",
     "attack": "Hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by specific projectile or firearm labels.",
-    "not_relevant": "The content does not meet the criteria for any defined tactical event labels."
+    "not_relevant": "The content does not meet the criteria for any defined tactical event labels.",
+    "red_alert": "red alerts for incoming missle (this is dif)"
 }
 
 def _create_prompt_mappings(ed: EventsDescription) -> str:

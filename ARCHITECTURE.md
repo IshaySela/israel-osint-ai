@@ -1,72 +1,85 @@
 # OSINT Map Project Architecture
 
 ## System Overview
-The system is designed to ingest, process, and visualize OSINT data from various sources (Telegram, RSS, Web Scraping) in a unified map-based interface.
+The system ingests, processes, and visualizes OSINT data from Telegram channels on an interactive map in real time.
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 60, 'rankSpacing': 100}}}%%
 graph TD
     %% Ingestion Layer
-    subgraph Ingestion ["Ingestion Layer (Python)"]
-        T[Telegram Scraper]
-        R[RSS/Web Scraper]
-        W[Webhooks/API]
+    subgraph Ingestion ["Ingestion Layer"]
+        T[Telegram Scraper - Telethon]
+        NEWS[News RSS Scraper - not implemented yet]
     end
 
     %% Message Broker
-    subgraph Broker ["Message Broker"]
-        MQ{RabbitMQ}
+    subgraph Broker ["Message Broker (RabbitMQ)"]
+        RE{{raw_events exchange}}
+        PE{{processed_events exchange}}
+        DLX{{dead_letter exchange}}
+        RE ~~~ PE
     end
 
     %% Processing Layer
-    subgraph Processing ["Processing Layer (Golang)"]
-        direction LR
-        NS[Normalization Service]
-        LLM[OpenAI API / LLM]
-        GS[Geocoding/NLP Service]
+    subgraph Processing ["Processing Layer (Go)"]
+        WP[Worker Pool]
+        LLM[OpenAI — extraction & summary]
+        GEO[Nominatim Geocoder]
+        IDX[Indexing]
     end
 
     %% Storage
-    subgraph Storage ["Storage Layer"]
-        DB[(NoSQL DB: Elasticsearch)]
+    subgraph Storage ["Storage (Elasticsearch)"]
+        GC[(geocode cache)]
+        OSINT[(osint_events)]
     end
 
     %% API Layer
-    subgraph API ["API Layer (Flask w graphql)"]
-        QL[GraphQL Endpoint]
+    subgraph API ["Backend (FastAPI / Ariadne)"]
+        GQL[GraphQL endpoint]
+        SSE[SSE endpoint]
     end
 
     %% Frontend Layer
-    subgraph Frontend ["Frontend Layer (React)"]
-        Map[Mapbox/Leaflet UI]
+    subgraph Frontend ["Frontend (React)"]
+        Map[Interactive Map]
     end
 
-    %% Data Flow
-    T --> MQ
-    R --> MQ
-    W --> MQ
-    MQ --> NS
-    NS <--> LLM
-    NS --> GS
-    GS --> DB
-    DB <--> QL
-    QL <--> Map
+    T -->|RawTelegramEvent| RE
+    NEWS-->|RawNewsEvent| RE
+    RE --> WP
+    WP --> LLM
+    LLM --> GEO
+    GEO <-->|cache lookup / store| GC
+    GEO --> IDX
+    IDX --> OSINT
+    IDX --> WP
+    WP -->|ProcessedEvent| PE
+    OSINT <--> GQL
+    PE --> SSE
+    GQL <--> Map
+    SSE -->|real-time push| Map
+    WP -->|on failure| DLX
 ```
 
-### Data Flow Breakdown
+## Data Flow Breakdown
 
-1.  **Ingestion**: Scrapers extract raw data (Free Text / structured data), test against gpt5-nano that its a relevant event, and publish it to a **RabbitMQ** queue.
-2.  **Queueing**: Decouples data ingestion and processing. Also provides the benfit of buffering events in case the processing service is busy / falls for some reason.
-3.  **Processing Service (OpenAI & Geocoding)**: 
-    - The **Processing Service** consumes raw messages.
-    - It sends unstructured text to **OpenAI (GPT5-mini)** to extract entities, summarize content, and identify potential location names from the text.
-4.  **Nominatim - Geocoding**: The **Geocoding Service** takes the location names identified by the LLM and converts them into precise coordinates.
-5.  **Storage**: The final enriched record is stored in **Elasticsearch** (optimized for geo-spatial and full-text search).
-6.  **Delivery**: The **React Frontend** requests data via **GraphQL** from a dedicated backend service. The service provides queries, SSE for real time updates etc.
+1. **Ingestion** — The Telegram scraper listens to a configured set of channel IDs via Telethon. Each incoming message is classified by **gpt-5-nano**, relevant messages push to rabbitmq.
 
+2. **Queueing** — RabbitMQ decouples ingestion from processing and buffers events under load. Failed messages are routed to a DLX (`dead_letter`).
+
+3. **Processing** — A Go worker pool consumes from the `raw_events` exchange. Each worker:
+   - Sends the raw text to **OpenAI API** to extract English location names and produce a Hebrew summary.
+   - Geocodes each extracted location via **Nominatim**, restricted to Israel. Results are cached in an Elasticsearch `geocode_cache` index to avoid redundant API calls.
+   - Indexes the event into the `osint_events` Elasticsearch index.
+   - Publishes the processed event to the `processed_events` exchange.
+
+4. **Backend** — A **FastAPI** service with an **Ariadne** GraphQL schema exposes a time-range query from now up to 72 hours ago. An SSE endpoint (`/events-stream`) subscribes to the `processed_events` exchange and pushes new events to connected clients in real time.
+
+5. **Frontend** — The React client fetches events via GraphQL on load and subscribes to the SSE stream for live updates, rendering all events on an interactive map.
 
 ## Cost Optimization
 
-To manage the costs of high-volume OSINT data processing, the following strategies are employed:
-
-- **Model Selection**: Use **GPT5-nano** for event classificatons and **GPT5-mini** for extraction and summarization.
-**Ingestion Layer** discards irrelevant events before pushing to the rabbitmq.
+- **Model tiering**: `gpt-5-nano` handles the high-volume binary-like classification at the ingestion layer. The more capable (and expensive) model runs only on events that pass the relevance filter.
+- **Geocode caching**: Nominatim results are persisted in Elasticsearch, eliminating duplicate geocoding requests for repeated location names.
+- **Early filtering**: The ingestion layer discards irrelevant messages before they enter RabbitMQ, preventing unnecessary downstream processing.

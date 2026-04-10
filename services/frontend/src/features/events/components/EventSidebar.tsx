@@ -1,27 +1,34 @@
 import React, { useEffect } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useDispatch, useSelector } from 'react-redux';
-import { GET_LATEST_EVENTS } from '../graphql/queries';
+import { GET_EVENTS } from '../graphql/queries';
 import { setEvents } from '../store/eventSlice';
+import { useEventSSE } from '../hooks/useEventSSE';
 import type { RootState } from '../../../store';
 import EventCard from './EventCard';
 import GlassPanel from '../../../components/common/GlassPanel';
+import TimeRangeSlider from './TimeRangeSlider';
 import { Radio } from 'lucide-react';
 
-interface GetLatestEventsData {
-  latestEvents: any[];
+interface GetEventsData {
+  events: any[];
 }
 
 const EventSidebar: React.FC = () => {
   const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
-  const { loading, error, data } = useQuery<GetLatestEventsData>(GET_LATEST_EVENTS, {
-    pollInterval: 30000, // Poll every 30 seconds
+  const { fromMinutesAgo, toMinutesAgo } = useSelector((state: RootState) => state.event.timeRange);
+  const { loading, error, data } = useQuery<GetEventsData>(GET_EVENTS, {
+    variables: { fromMinutesAgo, toMinutesAgo },
+    fetchPolicy: 'network-only',
   });
 
+  // Initialize SSE connection
+  useEventSSE();
+
   useEffect(() => {
-    if (data && data.latestEvents) {
-      dispatch(setEvents(data.latestEvents));
+    if (data?.events) {
+      dispatch(setEvents(data.events));
     }
   }, [data, dispatch]);
 
@@ -44,13 +51,15 @@ const EventSidebar: React.FC = () => {
           {events.length} EVENTS
         </span>
       </div>
-      
+
+      <TimeRangeSlider />
+
       <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
         {events.length === 0 ? (
           <p className="text-slate-500 text-center py-10">No events found...</p>
         ) : (
           events.map((event, idx) => (
-            <EventCard key={`${event.timestamp}-${idx}`} event={event} />
+            <EventCard key={`${event.timestamp_epoch}-${idx}`} event={event} />
           ))
         )}
       </div>

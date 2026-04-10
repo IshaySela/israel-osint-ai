@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 	openai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/responses"
 )
 
 const prompt = `You are a proffesional text analayzer. Extract the location data from a text and summarize the event.
-The location should include the at least the city name, and street if exists. do not add any other type of data.
+The location should include the city name only.
 Produce output with the following format:
 {
 "enLocations": ["first location, "second location",....],
@@ -23,14 +22,14 @@ type AgentSummary struct {
 	HeSummary   string   `json:"heSummary"`
 }
 
-func CreateAgentSummary(event models.RawOsintEvent, ctx context.Context, apiKey string, modelName string) (AgentSummary, error) {
+func CreateAgentSummary(rawText string, ctx context.Context, apiKey string, modelName string) (AgentSummary, error) {
 	client := openai.NewClient(
 		option.WithAPIKey(apiKey),
 	)
 
 	resp, err := client.Responses.New(ctx, responses.ResponseNewParams{
 		Instructions: openai.String(prompt),
-		Input:        responses.ResponseNewParamsInputUnion{OfString: openai.String(event.Text)},
+		Input:        responses.ResponseNewParamsInputUnion{OfString: openai.String(rawText)},
 		Model:        openai.ChatModel(modelName),
 	})
 
