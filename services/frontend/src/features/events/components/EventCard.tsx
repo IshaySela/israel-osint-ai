@@ -12,7 +12,7 @@ interface Location {
 interface Event {
   raw_message: string;
   summary: string;
-  timestamp: string;
+  timestamp_epoch: number;
   locations: Location[];
 }
 
@@ -23,9 +23,9 @@ interface EventCardProps {
 const EventCard: React.FC<EventCardProps> = ({ event }) => {
   const dispatch = useDispatch();
   const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
-  const isSelected = selectedEvent?.timestamp === event.timestamp && selectedEvent?.raw_message === event.raw_message;
+  const isSelected = selectedEvent?.timestamp_epoch === event.timestamp_epoch && selectedEvent?.raw_message === event.raw_message;
 
-  const formattedDate = new Date(event.timestamp).toLocaleTimeString('he-IL', {
+  const formattedDate = new Date(event.timestamp_epoch * 1000).toLocaleTimeString('he-IL', {
     hour: '2-digit',
     minute: '2-digit',
   });

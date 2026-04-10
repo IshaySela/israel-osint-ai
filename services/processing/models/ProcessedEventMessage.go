@@ -4,5 +4,5 @@ type ProcessedEventMessage struct {
 	DbId      string     `json:"dbId"`
 	Summary   string     `json:"summary"`
 	Locations []Location `json:"locations"`
-	Timestamp string     `json:"timestamp"`
+	TimestampEpoch int64      `json:"timestamp_epoch"`
 }

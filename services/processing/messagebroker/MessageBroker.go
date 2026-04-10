@@ -158,7 +158,7 @@ func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent, dbId st
 		DbId:      dbId,
 		Summary:   ev.Summary,
 		Locations: ev.Locations,
-		Timestamp: ev.Timestamp,
+		TimestampEpoch: ev.TimestampEpoch,
 	}
 
 	body, err := json.Marshal(msg)

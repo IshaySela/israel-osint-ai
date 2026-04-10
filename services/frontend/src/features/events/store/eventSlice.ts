@@ -10,7 +10,7 @@ interface Location {
 interface Event {
   raw_message: string;
   summary: string;
-  timestamp: string;
+  timestamp_epoch: number;
   locations: Location[];
 }
 
@@ -43,7 +43,7 @@ export const eventSlice = createSlice({
     addEvent: (state, action: PayloadAction<Event>) => {
       // Check if event already exists to avoid duplicates
       const exists = state.events.some(
-        (e) => e.timestamp === action.payload.timestamp && e.summary === action.payload.summary
+        (e) => e.timestamp_epoch === action.payload.timestamp_epoch && e.summary === action.payload.summary
       );
       if (!exists) {
         state.events = [action.payload, ...state.events].slice(0, 100);

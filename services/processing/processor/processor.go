@@ -100,10 +100,10 @@ func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context
 	}
 
 	processedEvent = storage.ProcessedEvent{
-		RawMessage: te.Text,
-		Summary:    result.HeSummary,
-		Locations:  locations,
-		Timestamp:  te.Timestamp,
+		RawMessage:     te.Text,
+		Summary:        result.HeSummary,
+		Locations:      locations,
+		TimestampEpoch: models.ParseToEpoch(te.Timestamp),
 	}
 
 	return processedEvent, nil

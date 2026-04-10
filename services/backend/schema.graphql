@@ -7,7 +7,7 @@ type Location {
 type Event {
     raw_message: String!
     summary: String!
-    timestamp: String!
+    timestamp_epoch: Int!
     locations: [Location!]!
 }
 

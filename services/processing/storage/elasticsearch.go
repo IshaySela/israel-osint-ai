@@ -23,7 +23,7 @@ type ProcessedEvent struct {
 	RawMessage string            `json:"raw_message"`
 	Summary    string            `json:"summary"`
 	Locations  []models.Location `json:"locations"`
-	Timestamp  string            `json:"timestamp"`
+	TimestampEpoch int64         `json:"timestamp_epoch"`
 }
 
 func NewElasticsearchClient(cfg *config.Config) *ElasticsearchClient {
