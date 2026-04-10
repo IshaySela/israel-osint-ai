@@ -41,7 +41,8 @@ async def handler(event: events.NewMessage.Event):
             text=text,
             event_type=event_type,
             message_id=msg.id,
-            timestamp=str(msg.date)
+            timestamp=str(msg.date),
+            channel_title=chat.title
         )
         print(broker.connection)
         await broker.publish_raw_event_async(event_data)

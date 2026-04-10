@@ -116,9 +116,8 @@ func (rl *RabbitClient) ListenForRawEvents(ctx context.Context, proc EventProces
 
 	go func() {
 		for d := range msgs {
-			d := d
-			var event models.RawOsintEvent
-			if err := event.Unmarshal(d.Body); err != nil {
+			event, err := models.ParseRawOsintEvent(d.Body)
+			if err != nil {
 				log.Printf("Failed to unmarshal message, discarding: %v", err)
 				d.Nack(false, false)
 				continue

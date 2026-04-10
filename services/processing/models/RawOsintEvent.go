@@ -5,17 +5,36 @@ import (
 	"fmt"
 )
 
-type RawOsintEvent struct {
-	Text      string `json:"text"`
-	EventType string `json:"event_type"`
-	ChatID    int64  `json:"chat_id"`
-	MessageID int    `json:"message_id"`
-	Date      string `json:"date"`
+type RawOsintEvent interface{}
+
+type rawOsintEvent struct {
+	ID        string `json:"id"`
+	Timestamp string `json:"timestamp"`
+	Source    string `json:"source"`
 }
 
-func (e *RawOsintEvent) Unmarshal(data []byte) error {
-	if err := json.Unmarshal(data, e); err != nil {
-		return fmt.Errorf("RawOsintEvent unmarshal error: %w", err)
+func ParseRawOsintEvent(b []byte) (RawOsintEvent, error) {
+	var raw rawOsintEvent
+	var parsed RawOsintEvent
+	err := json.Unmarshal(b, &raw)
+
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	switch raw.Source {
+	case "telegram":
+		var tg RawTelegramEvent
+		err = json.Unmarshal(b, &tg)
+
+		if err != nil {
+			return nil, err
+		}
+
+		parsed = tg
+	default:
+		return nil, fmt.Errorf("Unknown source %s", raw.Source)
+	}
+
+	return parsed, nil
 }
