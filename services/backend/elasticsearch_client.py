@@ -17,25 +17,24 @@ class ESClient:
         try:
             query: Dict[str, Any] = {
                 "query": {"match_all": {}},
-                "sort": [{"timestamp.keyword": {"order": "desc"}}],
+                "sort": [{"timestamp_epoch": {"order": "desc"}}],
                 "size": size
             }
-            # Use body=query for v8 compatibility if needed, or just pass kwargs
             response: Any = self.client.search(index=self.index, **query)
             events: List[Dict[str, Any]] = []
-            
+
             hits = response.get('hits', {}).get('hits', [])
             for hit in hits:
                 source: Dict[str, Any] = hit.get('_source', {})
-                
-                event: Dict[str, Any] = {
+                events.append({
                     "raw_message": source.get("raw_message", ""),
                     "summary": source.get("summary", ""),
-                    "timestamp": source.get("timestamp", ""),
-                    "locations": source.get("locations", [])
-                }
-                
-                events.append(event)
+                    "timestamp_epoch": source.get("timestamp_epoch", 0),
+                    "locations": source.get("locations", []),
+                    "channel_title": source.get("channel_title", ""),
+                    "channel_main_lang": source.get("channel_main_lang", ""),
+                    "source": source.get("source", ""),
+                })
             logger.info(f"Retrived {len(events)} events from the database")
             return events
         except Exception as e:
@@ -44,15 +43,15 @@ class ESClient:
 
     def get_events_in_range(self, from_minutes_ago: int, to_minutes_ago: int, size: int = 200) -> List[Dict[str, Any]]:
         now = datetime.now(timezone.utc)
-        range_from = (now - timedelta(minutes=from_minutes_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
-        range_to   = (now - timedelta(minutes=to_minutes_ago)).strftime('%Y-%m-%d %H:%M:%S+00:00')
+        range_from = int((now - timedelta(minutes=from_minutes_ago)).timestamp())
+        range_to   = int((now - timedelta(minutes=to_minutes_ago)).timestamp())
         try:
             query: Dict[str, Any] = {
-                "query": {"range": {"timestamp.keyword": {"gte": range_from, "lte": range_to}}},
-                "sort": [{"timestamp.keyword": {"order": "desc"}}],
+                "query": {"range": {"timestamp_epoch": {"gte": range_from, "lte": range_to}}},
+                "sort": [{"timestamp_epoch": {"order": "desc"}}],
                 "size": size
             }
-            
+
             response: Any = self.client.search(index=self.index, **query)
             events: List[Dict[str, Any]] = []
             hits = response.get('hits', {}).get('hits', [])
@@ -61,8 +60,11 @@ class ESClient:
                 events.append({
                     "raw_message": source.get("raw_message", ""),
                     "summary": source.get("summary", ""),
-                    "timestamp": source.get("timestamp", ""),
-                    "locations": source.get("locations", [])
+                    "timestamp_epoch": source.get("timestamp_epoch", 0),
+                    "locations": source.get("locations", []),
+                    "channel_title": source.get("channel_title", ""),
+                    "channel_main_lang": source.get("channel_main_lang", ""),
+                    "source": source.get("source", ""),
                 })
             logger.info(f"Retrieved {len(events)} events in range [{range_from} → {range_to}]")
             return events

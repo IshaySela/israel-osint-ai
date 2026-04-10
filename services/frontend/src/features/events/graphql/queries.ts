@@ -5,7 +5,10 @@ export const GET_LATEST_EVENTS = gql`
     latestEvents {
       raw_message
       summary
-      timestamp
+      timestamp_epoch
+      channel_title
+      channel_main_lang
+      source
       locations {
         name
         lat
@@ -20,7 +23,10 @@ export const GET_EVENTS = gql`
     events(fromMinutesAgo: $fromMinutesAgo, toMinutesAgo: $toMinutesAgo) {
       raw_message
       summary
-      timestamp
+      timestamp_epoch
+      channel_title
+      channel_main_lang
+      source
       locations {
         name
         lat

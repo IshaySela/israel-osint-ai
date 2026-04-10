@@ -59,7 +59,7 @@ const EventSidebar: React.FC = () => {
           <p className="text-slate-500 text-center py-10">No events found...</p>
         ) : (
           events.map((event, idx) => (
-            <EventCard key={`${event.timestamp}-${idx}`} event={event} />
+            <EventCard key={`${event.timestamp_epoch}-${idx}`} event={event} />
           ))
         )}
       </div>

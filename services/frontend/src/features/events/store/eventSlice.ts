@@ -1,18 +1,27 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-interface Location {
+export interface Location {
   name: string;
   lat: string;
   lon: string;
 }
 
-interface Event {
-  raw_message: string;
+export interface OsintEvent {
+  source: string;
+  timestamp_epoch: number;
   summary: string;
-  timestamp: string;
   locations: Location[];
 }
+
+export interface TelegramEvent extends OsintEvent {
+  source: 'telegram';
+  raw_message: string;
+  channel_title: string;
+  channel_main_lang: string;
+}
+
+export type AnyOsintEvent = TelegramEvent;
 
 interface TimeRange {
   fromMinutesAgo: number;
@@ -20,8 +29,8 @@ interface TimeRange {
 }
 
 interface EventState {
-  events: Event[];
-  selectedEvent: Event | null;
+  events: AnyOsintEvent[];
+  selectedEvent: AnyOsintEvent | null;
   searchQuery: string;
   timeRange: TimeRange;
 }
@@ -37,19 +46,19 @@ export const eventSlice = createSlice({
   name: 'event',
   initialState,
   reducers: {
-    setEvents: (state, action: PayloadAction<Event[]>) => {
+    setEvents: (state, action: PayloadAction<AnyOsintEvent[]>) => {
       state.events = action.payload;
     },
-    addEvent: (state, action: PayloadAction<Event>) => {
+    addEvent: (state, action: PayloadAction<AnyOsintEvent>) => {
       // Check if event already exists to avoid duplicates
       const exists = state.events.some(
-        (e) => e.timestamp === action.payload.timestamp && e.summary === action.payload.summary
+        (e) => e.timestamp_epoch === action.payload.timestamp_epoch && e.summary === action.payload.summary
       );
       if (!exists) {
         state.events = [action.payload, ...state.events].slice(0, 100);
       }
     },
-    setSelectedEvent: (state, action: PayloadAction<Event | null>) => {
+    setSelectedEvent: (state, action: PayloadAction<AnyOsintEvent | null>) => {
       state.selectedEvent = action.payload;
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {

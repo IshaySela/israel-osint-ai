@@ -7,8 +7,11 @@ type Location {
 type Event {
     raw_message: String!
     summary: String!
-    timestamp: String!
+    timestamp_epoch: Int!
     locations: [Location!]!
+    channel_title: String!
+    channel_main_lang: String!
+    source: String!
 }
 
 type Query {

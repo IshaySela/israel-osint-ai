@@ -29,35 +29,15 @@ func NewProcessor(cfg *config.Config, geocoder *de.GeocodingService, esClient *s
 	}
 }
 
-func (p *Processor) Process(ctx context.Context, event models.RawOsintEvent) error {
-	log.Printf("Processing event: %s\n", string(event.Text))
-	result, err := de.CreateAgentSummary(event, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
-	if err != nil {
-		return fmt.Errorf("error extracting info: %w", err)
-	}
+func (p *Processor) Process(ctx context.Context, rawEvent models.RawOsintEvent) error {
+	var processedEvent storage.IProcessedEvent
+	var err error
 
-	log.Printf("AI Summary: %+v\n", result)
-
-	locationMap, geocodeErr := p.Geocoder.GetBatchCoordinates(result.EnLocations)
-
-	if geocodeErr != nil {
-		return p.handleGeocodeError(geocodeErr)
-	}
-
-	var locations []models.Location
-	for name, geo := range locationMap {
-		locations = append(locations, models.Location{
-			Name: name,
-			Lat:  geo.Lat,
-			Lon:  geo.Lon,
-		})
-	}
-
-	processedEvent := storage.ProcessedEvent{
-		RawMessage: event.Text,
-		Summary:    result.HeSummary,
-		Locations:  locations,
-		Timestamp:  event.Date,
+	switch event := rawEvent.(type) {
+	case models.RawTelegramEvent:
+		processedEvent, err = p.processTelegramEvent(event, ctx)
+	default:
+		err = fmt.Errorf("Unsupported event type given: %T", rawEvent)
 	}
 
 	err, docId := p.ESClient.IndexEvent(ctx, processedEvent)
@@ -92,4 +72,44 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 	}
 
 	return result
+}
+
+func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context.Context) (storage.IProcessedEvent, error) {
+	var processedEvent storage.ProcessedTelegramEvent
+
+	result, err := de.CreateAgentSummary(te.Text, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
+	if err != nil {
+		return processedEvent, fmt.Errorf("error extracting info: %w", err)
+	}
+
+	log.Printf("AI Summary: %+v\n", result)
+
+	locationMap, geocodeErr := p.Geocoder.GetBatchCoordinates(result.EnLocations)
+
+	if geocodeErr != nil {
+		return processedEvent, p.handleGeocodeError(geocodeErr)
+	}
+
+	var locations []models.Location
+	for name, geo := range locationMap {
+		locations = append(locations, models.Location{
+			Name: name,
+			Lat:  geo.Lat,
+			Lon:  geo.Lon,
+		})
+	}
+
+	processedEvent = storage.ProcessedTelegramEvent{
+		ProcessedEvent: storage.ProcessedEvent{
+			RawMessage:     te.Text,
+			Summary:        result.HeSummary,
+			Locations:      locations,
+			TimestampEpoch: models.ParseToEpoch(te.Timestamp),
+			Source:         te.Source,
+		},
+		ChannelTitle:    te.ChannelTitle,
+		ChannelMainLang: te.ChannelMainLang,
+	}
+
+	return processedEvent, nil
 }

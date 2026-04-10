@@ -7,11 +7,13 @@ from telethon import TelegramClient, events
 from telethon.types import Message, Chat
 from shared.MessageBroker import MessageBroker
 from services.ClassifyTelegramMessage import classify_telegram_msg
+from models.RawTelegramEvent import RawTelegramEvent
 
 setup_logging()
 
 CONFIG = TelegramScraperConfig.get()
 MONITORED_CHANNEL_IDS: List[int] = [c.channelId for c in CONFIG.channels]
+CHANNEL_LANG_MAP: dict[int, str] = {c.channelId: c.channelMainLang for c in CONFIG.channels}
 
 
 client = TelegramClient('israel-osint-ai-telegram', int(CONFIG.api_id), CONFIG.api_hash)
@@ -34,13 +36,16 @@ async def handler(event: events.NewMessage.Event):
     logger.info(f"Classified Message from channel{chat.id}: {text[:30]}... | Type: {event_type}")
         
     if event_type != 'not_relevant':
-        event_data = {
-            'text': text,
-            'event_type': event_type,
-            'chat_id': chat.id,
-            'message_id': msg.id,
-            'date': str(msg.date)
-        }
+        event_data = RawTelegramEvent(
+            id=f"tg_{msg.id}",
+            chat_id=chat.id,
+            text=text,
+            event_type=event_type,
+            message_id=msg.id,
+            timestamp=str(msg.date),
+            channel_title=chat.title,
+            channel_main_lang=CHANNEL_LANG_MAP.get(chat.id, "")
+        )
         print(broker.connection)
         await broker.publish_raw_event_async(event_data)
         logger.info(f"Published event: {event_type} {text[:30]}")

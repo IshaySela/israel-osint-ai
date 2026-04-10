@@ -19,13 +19,6 @@ type ElasticsearchClient struct {
 	cfg    *config.Config
 }
 
-type ProcessedEvent struct {
-	RawMessage string            `json:"raw_message"`
-	Summary    string            `json:"summary"`
-	Locations  []models.Location `json:"locations"`
-	Timestamp  string            `json:"timestamp"`
-}
-
 func NewElasticsearchClient(cfg *config.Config) *ElasticsearchClient {
 	return &ElasticsearchClient{
 		cfg: cfg,
@@ -50,7 +43,7 @@ func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	return nil
 }
 
-func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event ProcessedEvent) (error, string) {
+func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event IProcessedEvent) (error, string) {
 	if esc.client == nil {
 		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
