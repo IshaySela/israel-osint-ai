@@ -7,15 +7,21 @@ export interface Location {
   lon: string;
 }
 
-export interface Event {
-  raw_message: string;
-  summary: string;
-  timestamp_epoch: number;
-  channel_title: string;
-  channel_main_lang: string;
+export interface OsintEvent {
   source: string;
+  timestamp_epoch: number;
+  summary: string;
   locations: Location[];
 }
+
+export interface TelegramEvent extends OsintEvent {
+  source: 'telegram';
+  raw_message: string;
+  channel_title: string;
+  channel_main_lang: string;
+}
+
+export type AnyOsintEvent = TelegramEvent;
 
 interface TimeRange {
   fromMinutesAgo: number;
@@ -23,8 +29,8 @@ interface TimeRange {
 }
 
 interface EventState {
-  events: Event[];
-  selectedEvent: Event | null;
+  events: AnyOsintEvent[];
+  selectedEvent: AnyOsintEvent | null;
   searchQuery: string;
   timeRange: TimeRange;
 }
@@ -40,10 +46,10 @@ export const eventSlice = createSlice({
   name: 'event',
   initialState,
   reducers: {
-    setEvents: (state, action: PayloadAction<Event[]>) => {
+    setEvents: (state, action: PayloadAction<AnyOsintEvent[]>) => {
       state.events = action.payload;
     },
-    addEvent: (state, action: PayloadAction<Event>) => {
+    addEvent: (state, action: PayloadAction<AnyOsintEvent>) => {
       // Check if event already exists to avoid duplicates
       const exists = state.events.some(
         (e) => e.timestamp_epoch === action.payload.timestamp_epoch && e.summary === action.payload.summary
@@ -52,7 +58,7 @@ export const eventSlice = createSlice({
         state.events = [action.payload, ...state.events].slice(0, 100);
       }
     },
-    setSelectedEvent: (state, action: PayloadAction<Event | null>) => {
+    setSelectedEvent: (state, action: PayloadAction<AnyOsintEvent | null>) => {
       state.selectedEvent = action.payload;
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
