@@ -9,6 +9,7 @@ type Event {
     summary: String!
     timestamp_epoch: Int!
     locations: [Location!]!
+    channel_title: String!
 }
 
 type Query {

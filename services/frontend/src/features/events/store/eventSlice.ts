@@ -1,16 +1,17 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-interface Location {
+export interface Location {
   name: string;
   lat: string;
   lon: string;
 }
 
-interface Event {
+export interface Event {
   raw_message: string;
   summary: string;
   timestamp_epoch: number;
+  channel_title: string;
   locations: Location[];
 }
 

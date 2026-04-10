@@ -155,10 +155,11 @@ func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte)
 
 func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent, dbId string) error {
 	msg := models.ProcessedEventMessage{
-		DbId:      dbId,
-		Summary:   ev.Summary,
-		Locations: ev.Locations,
+		DbId:           dbId,
+		Summary:        ev.Summary,
+		Locations:      ev.Locations,
 		TimestampEpoch: ev.TimestampEpoch,
+		ChannelTitle:   ev.ChannelTitle,
 	}
 
 	body, err := json.Marshal(msg)

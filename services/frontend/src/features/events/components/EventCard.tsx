@@ -1,20 +1,8 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setSelectedEvent } from '../store/eventSlice';
+import type { Event } from '../store/eventSlice';
 import type { RootState } from '../../../store';
-
-interface Location {
-  name: string;
-  lat: string;
-  lon: string;
-}
-
-interface Event {
-  raw_message: string;
-  summary: string;
-  timestamp_epoch: number;
-  locations: Location[];
-}
 
 interface EventCardProps {
   event: Event;
@@ -41,7 +29,9 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
     >
       <div className="flex justify-between items-start mb-2">
         <span className="text-xs font-mono text-cyan-400">{formattedDate}</span>
-        {/* Placeholder for relative time or status */}
+        {event.channel_title && (
+          <span className="text-xs text-slate-400 font-mono">{event.channel_title}</span>
+        )}
       </div>
       <p className="text-sm text-slate-200 leading-relaxed text-right dir-rtl font-medium">
         {event.summary}
