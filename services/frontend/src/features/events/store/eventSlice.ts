@@ -13,6 +13,7 @@ export interface Event {
   timestamp_epoch: number;
   channel_title: string;
   channel_main_lang: string;
+  source: string;
   locations: Location[];
 }
 

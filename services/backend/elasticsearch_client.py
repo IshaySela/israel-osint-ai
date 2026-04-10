@@ -33,6 +33,7 @@ class ESClient:
                     "locations": source.get("locations", []),
                     "channel_title": source.get("channel_title", ""),
                     "channel_main_lang": source.get("channel_main_lang", ""),
+                    "source": source.get("source", ""),
                 })
             logger.info(f"Retrived {len(events)} events from the database")
             return events
@@ -63,6 +64,7 @@ class ESClient:
                     "locations": source.get("locations", []),
                     "channel_title": source.get("channel_title", ""),
                     "channel_main_lang": source.get("channel_main_lang", ""),
+                    "source": source.get("source", ""),
                 })
             logger.info(f"Retrieved {len(events)} events in range [{range_from} → {range_to}]")
             return events

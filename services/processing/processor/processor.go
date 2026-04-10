@@ -106,6 +106,7 @@ func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context
 		TimestampEpoch:  models.ParseToEpoch(te.Timestamp),
 		ChannelTitle:    te.ChannelTitle,
 		ChannelMainLang: te.ChannelMainLang,
+		Source:          te.Source,
 	}
 
 	return processedEvent, nil

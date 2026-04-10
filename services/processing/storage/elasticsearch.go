@@ -26,6 +26,7 @@ type ProcessedEvent struct {
 	TimestampEpoch  int64             `json:"timestamp_epoch"`
 	ChannelTitle    string            `json:"channel_title"`
 	ChannelMainLang string            `json:"channel_main_lang"`
+	Source          string            `json:"source"`
 }
 
 func NewElasticsearchClient(cfg *config.Config) *ElasticsearchClient {

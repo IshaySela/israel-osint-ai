@@ -11,6 +11,7 @@ type Event {
     locations: [Location!]!
     channel_title: String!
     channel_main_lang: String!
+    source: String!
 }
 
 type Query {
