@@ -1,9 +1,9 @@
 from shared.RawOsintEvent import RawOsintEvent
-from dataclasses import dataclass
+from pydantic import Field
 
-@dataclass
 class RawTelegramEvent(RawOsintEvent):
     text: str
     event_type: str
-    chat_id: str
-    message_id: str
+    chat_id: int
+    message_id: int
+    source: str = Field(default="telegram",init=False)

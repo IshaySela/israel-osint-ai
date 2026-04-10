@@ -1,11 +1,8 @@
-from dataclasses import dataclass
-from datetime import date
+from pydantic import BaseModel
 
-
-@dataclass
-class RawOsintEvent:
+class RawOsintEvent(BaseModel):
     """Base class for all unprocessed osint events
     """
     id: str
-    date: date
+    timestamp: str
     source: str

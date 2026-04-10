@@ -4,7 +4,7 @@ import aio_pika
 from aio_pika.exceptions import AMQPConnectionError, AMQPChannelError
 from typing import Dict, Any, Callable, Awaitable
 from loguru import logger
-
+from .RawOsintEvent import RawOsintEvent
 
 class MessageBroker:
     """The class MessageBroker abstract the impl details, optimzations etc. for directly working with
@@ -51,7 +51,7 @@ class MessageBroker:
             # Processed events exchange
             await channel.declare_exchange(self.processed_events_exchange, aio_pika.ExchangeType.FANOUT, durable=True)
 
-    async def publish_raw_event_async(self, event_data: Dict[str, Any]) -> None:
+    async def publish_raw_event_async(self, event_data: RawOsintEvent) -> None:
         """Publishes a JSON-serialized event to the default queue.
 
         Args:
@@ -66,7 +66,8 @@ class MessageBroker:
         channel = await self.connection.channel()
         async with channel:
             exchange = await channel.get_exchange(self.raw_events_exchange)
-            msg = aio_pika.Message(json.dumps(event_data).encode())
+            
+            msg = aio_pika.Message(event_data.model_dump_json().encode())
             await exchange.publish(msg, routing_key="")
             
 
