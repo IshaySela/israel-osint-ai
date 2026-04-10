@@ -12,21 +12,19 @@ Dedicated microservices ingest OSINT sources, filter events by relevance via the
 
 ## Development Startup
 
-To start the infrastructure required for local development follow these steps:
+1. Make sure Docker is installed and running.
+2. Set secrets in `services/shared/config/secrets.env`:
+   - `OPENAI_API_KEY` — from [OpenAI API platform](https://platform.openai.com/api-keys)
+3. Set Telegram credentials in `services/ingestion/telegram-scraper/.env`:
+   - `TELEGRAM_API_ID` and `TELEGRAM_API_HASH` — from [Telegram API tools](https://my.telegram.org/apps)
 
-1. Make sure docker is installed and running.
-2. Generate Telegram app id and hash via [telegram API development tools](https://my.telegram.org/apps)
-3. Generate OpenAI api key using [OpenAI API platform](https://platform.openai.com/api-keys)
-4. Configure the ```APP_ID```, ```APP_HASH``` and ```OPENAI_API_KEY``` environment variables.
-
-Run the following command:
 ```bash
 docker compose up -d
 ```
-Access the frontend via ```http://localhost:5173/```
+
+Frontend: `http://localhost:5173/` | Kibana: `http://localhost:5601/` | RabbitMQ: `http://localhost:15672/`
 
 ### Stop the Services
-To stop and remove the containers:
 ```bash
 docker compose down
 ```
