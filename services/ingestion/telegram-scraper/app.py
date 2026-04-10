@@ -13,6 +13,7 @@ setup_logging()
 
 CONFIG = TelegramScraperConfig.get()
 MONITORED_CHANNEL_IDS: List[int] = [c.channelId for c in CONFIG.channels]
+CHANNEL_LANG_MAP: dict[int, str] = {c.channelId: c.channelMainLang for c in CONFIG.channels}
 
 
 client = TelegramClient('israel-osint-ai-telegram', int(CONFIG.api_id), CONFIG.api_hash)
@@ -42,7 +43,8 @@ async def handler(event: events.NewMessage.Event):
             event_type=event_type,
             message_id=msg.id,
             timestamp=str(msg.date),
-            channel_title=chat.title
+            channel_title=chat.title,
+            channel_main_lang=CHANNEL_LANG_MAP.get(chat.id, "")
         )
         print(broker.connection)
         await broker.publish_raw_event_async(event_data)

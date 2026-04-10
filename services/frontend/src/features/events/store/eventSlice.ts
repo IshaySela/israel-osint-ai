@@ -12,6 +12,7 @@ export interface Event {
   summary: string;
   timestamp_epoch: number;
   channel_title: string;
+  channel_main_lang: string;
   locations: Location[];
 }
 

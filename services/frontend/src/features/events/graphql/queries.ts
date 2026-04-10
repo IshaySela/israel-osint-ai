@@ -7,6 +7,7 @@ export const GET_LATEST_EVENTS = gql`
       summary
       timestamp_epoch
       channel_title
+      channel_main_lang
       locations {
         name
         lat
@@ -23,6 +24,7 @@ export const GET_EVENTS = gql`
       summary
       timestamp_epoch
       channel_title
+      channel_main_lang
       locations {
         name
         lat

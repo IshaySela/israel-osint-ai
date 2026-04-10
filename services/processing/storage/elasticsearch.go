@@ -20,11 +20,12 @@ type ElasticsearchClient struct {
 }
 
 type ProcessedEvent struct {
-	RawMessage     string            `json:"raw_message"`
-	Summary        string            `json:"summary"`
-	Locations      []models.Location `json:"locations"`
-	TimestampEpoch int64             `json:"timestamp_epoch"`
-	ChannelTitle   string            `json:"channel_title"`
+	RawMessage      string            `json:"raw_message"`
+	Summary         string            `json:"summary"`
+	Locations       []models.Location `json:"locations"`
+	TimestampEpoch  int64             `json:"timestamp_epoch"`
+	ChannelTitle    string            `json:"channel_title"`
+	ChannelMainLang string            `json:"channel_main_lang"`
 }
 
 func NewElasticsearchClient(cfg *config.Config) *ElasticsearchClient {

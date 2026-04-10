@@ -6,5 +6,6 @@ class RawTelegramEvent(RawOsintEvent):
     event_type: str
     chat_id: int
     channel_title: str
+    channel_main_lang: str
     message_id: int
     source: str = Field(default="telegram",init=False)

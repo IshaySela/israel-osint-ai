@@ -30,7 +30,9 @@ const EventCard: React.FC<EventCardProps> = ({ event }) => {
       <div className="flex justify-between items-start mb-2">
         <span className="text-xs font-mono text-cyan-400">{formattedDate}</span>
         {event.channel_title && (
-          <span className="text-xs text-slate-400 font-mono">{event.channel_title}</span>
+          <span className="text-xs text-slate-400 font-mono">
+            {event.channel_title}{event.channel_main_lang ? ` | ${event.channel_main_lang}` : ''}
+          </span>
         )}
       </div>
       <p className="text-sm text-slate-200 leading-relaxed text-right dir-rtl font-medium">
