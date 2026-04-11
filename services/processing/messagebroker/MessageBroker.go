@@ -30,71 +30,6 @@ func NewRabbitClient(config *config.Config, pool *workerpool.WorkerPool) RabbitC
 	return RabbitClient{config: config, pool: pool}
 }
 
-func (rl *RabbitClient) setup() error {
-	conn, err := amqp.Dial(rl.config.RabbitMQURL)
-	if err != nil {
-		return errors.New("failed to establish connection to rabbitmq host")
-	}
-	rl.conn = conn
-
-	ch, err := rl.conn.Channel()
-	if err != nil {
-		return errors.New("failed to open channel to rabbitmq host")
-	}
-
-	// Declare DLX exchange and queue
-	if err = ch.ExchangeDeclare(rl.config.DLXExchange, "fanout", true, false, false, false, nil); err != nil {
-		return fmt.Errorf("failed to declare DLX exchange: %w", err)
-	}
-	log.Printf("Declared DLX exchange: %s", rl.config.DLXExchange)
-
-	dlxQueue, err := ch.QueueDeclare(rl.config.DLXQueue, true, false, false, false, nil)
-	if err != nil {
-		return fmt.Errorf("failed to declare DLX queue: %w", err)
-	}
-	log.Printf("Declared DLX queue: %s", dlxQueue.Name)
-
-	if err = ch.QueueBind(dlxQueue.Name, "#", rl.config.DLXExchange, false, nil); err != nil {
-		return fmt.Errorf("failed to bind DLX queue: %w", err)
-	}
-	log.Printf("Bound DLX queue %s to exchange %s", dlxQueue.Name, rl.config.DLXExchange)
-
-	// Declare raw events fanout exchange
-	if err = ch.ExchangeDeclare(rl.config.RawEventsExchange, "fanout", true, false, false, false, nil); err != nil {
-		return fmt.Errorf("failed to declare raw events exchange: %w", err)
-	}
-	log.Printf("Declared raw events exchange: %s", rl.config.RawEventsExchange)
-
-	// Declare raw events queue with DLX routing
-	q, err := ch.QueueDeclare(
-		rl.config.RabbitMQQueue,
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		amqp.Table{"x-dead-letter-exchange": rl.config.DLXExchange},
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare raw events queue: %w", err)
-	}
-	log.Printf("Declared raw events queue: %s (DLX: %s)", q.Name, rl.config.DLXExchange)
-
-	if err = ch.QueueBind(q.Name, "", rl.config.RawEventsExchange, false, nil); err != nil {
-		return fmt.Errorf("failed to bind raw events queue to exchange: %w", err)
-	}
-	log.Printf("Bound queue %s to exchange %s", q.Name, rl.config.RawEventsExchange)
-
-	// Declare processed events fanout exchange
-	if err = ch.ExchangeDeclare(rl.config.ProcessedEventsExchange, "fanout", true, false, false, false, nil); err != nil {
-		return fmt.Errorf("failed to declare processed events exchange: %w", err)
-	}
-	log.Printf("Declared processed events exchange: %s", rl.config.ProcessedEventsExchange)
-
-	rl.channel = ch
-	rl.queue = &q
-	return nil
-}
-
 func (rl *RabbitClient) ListenForRawEvents(ctx context.Context, proc EventProcessor) error {
 	if err := rl.setup(); err != nil {
 		return err
@@ -162,4 +97,69 @@ func (rl *RabbitClient) PublishProcessedEvent(ev storage.IProcessedEvent, dbId s
 	}
 
 	return rl.Publish(rl.config.ProcessedEventsExchange, "", body)
+}
+
+func (rl *RabbitClient) setup() error {
+	conn, err := amqp.Dial(rl.config.RabbitMQURL)
+	if err != nil {
+		return errors.New("failed to establish connection to rabbitmq host")
+	}
+	rl.conn = conn
+
+	ch, err := rl.conn.Channel()
+	if err != nil {
+		return errors.New("failed to open channel to rabbitmq host")
+	}
+
+	// Declare DLX exchange and queue
+	if err = ch.ExchangeDeclare(rl.config.DLXExchange, "fanout", true, false, false, false, nil); err != nil {
+		return fmt.Errorf("failed to declare DLX exchange: %w", err)
+	}
+	log.Printf("Declared DLX exchange: %s", rl.config.DLXExchange)
+
+	dlxQueue, err := ch.QueueDeclare(rl.config.DLXQueue, true, false, false, false, nil)
+	if err != nil {
+		return fmt.Errorf("failed to declare DLX queue: %w", err)
+	}
+	log.Printf("Declared DLX queue: %s", dlxQueue.Name)
+
+	if err = ch.QueueBind(dlxQueue.Name, "#", rl.config.DLXExchange, false, nil); err != nil {
+		return fmt.Errorf("failed to bind DLX queue: %w", err)
+	}
+	log.Printf("Bound DLX queue %s to exchange %s", dlxQueue.Name, rl.config.DLXExchange)
+
+	// Declare raw events fanout exchange
+	if err = ch.ExchangeDeclare(rl.config.RawEventsExchange, "fanout", true, false, false, false, nil); err != nil {
+		return fmt.Errorf("failed to declare raw events exchange: %w", err)
+	}
+	log.Printf("Declared raw events exchange: %s", rl.config.RawEventsExchange)
+
+	// Declare raw events queue with DLX routing
+	q, err := ch.QueueDeclare(
+		rl.config.RabbitMQQueue,
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		amqp.Table{"x-dead-letter-exchange": rl.config.DLXExchange},
+	)
+	if err != nil {
+		return fmt.Errorf("failed to declare raw events queue: %w", err)
+	}
+	log.Printf("Declared raw events queue: %s (DLX: %s)", q.Name, rl.config.DLXExchange)
+
+	if err = ch.QueueBind(q.Name, "", rl.config.RawEventsExchange, false, nil); err != nil {
+		return fmt.Errorf("failed to bind raw events queue to exchange: %w", err)
+	}
+	log.Printf("Bound queue %s to exchange %s", q.Name, rl.config.RawEventsExchange)
+
+	// Declare processed events fanout exchange
+	if err = ch.ExchangeDeclare(rl.config.ProcessedEventsExchange, "fanout", true, false, false, false, nil); err != nil {
+		return fmt.Errorf("failed to declare processed events exchange: %w", err)
+	}
+	log.Printf("Declared processed events exchange: %s", rl.config.ProcessedEventsExchange)
+
+	rl.channel = ch
+	rl.queue = &q
+	return nil
 }
