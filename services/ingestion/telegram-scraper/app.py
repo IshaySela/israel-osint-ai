@@ -7,7 +7,8 @@ from telethon import TelegramClient, events
 from telethon.types import Message, Chat
 from shared.MessageBroker import MessageBroker
 from services.ClassifyTelegramMessage import classify_telegram_msg
-from models.RawTelegramEvent import RawTelegramEvent
+from models.RawTelegramEvent import RawTelegramEvent, TelegramEventData
+import uuid
 
 setup_logging()
 
@@ -37,14 +38,16 @@ async def handler(event: events.NewMessage.Event):
         
     if event_type != 'not_relevant':
         event_data = RawTelegramEvent(
-            id=f"tg_{msg.id}",
-            chat_id=chat.id,
-            text=text,
-            event_type=event_type,
-            message_id=msg.id,
+            app_ev_id=str(uuid.uuid4()),
+            raw_message=text,
             timestamp=str(msg.date),
-            channel_title=chat.title,
-            channel_main_lang=CHANNEL_LANG_MAP.get(chat.id, "")
+            data=TelegramEventData(
+                event_type=event_type,
+                chat_id=chat.id,
+                channel_title=chat.title,
+                channel_main_lang=CHANNEL_LANG_MAP.get(chat.id, ""),
+                msg_id=msg.id,
+            ),
         )
         print(broker.connection)
         await broker.publish_raw_event_async(event_data)
