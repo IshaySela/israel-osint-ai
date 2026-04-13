@@ -30,13 +30,15 @@ func NewProcessor(cfg *config.Config, geocoder *de.GeocodingService, esClient *s
 }
 
 func (p *Processor) Process(ctx context.Context, rawEvent models.RawOsintEvent) error {
-	var processedEvent storage.IProcessedEvent
+	var processedEvent storage.ProcessedEvent[any]
 	var err error
 
 	processedEvent, err = p.processGeospatialEvent(rawEvent, ctx)
+
 	if err != nil {
 		return err
 	}
+
 	err, docId := p.ESClient.IndexEvent(ctx, processedEvent)
 	if err != nil {
 		return fmt.Errorf("error indexing event to elasticsearch: %w", err)
@@ -71,7 +73,7 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 	return result
 }
 
-func (p *Processor) processGeospatialEvent(te models.RawOsintEvent, ctx context.Context) (storage.IProcessedEvent, error) {
+func (p *Processor) processGeospatialEvent(te models.RawOsintEvent, ctx context.Context) (storage.ProcessedEvent[any], error) {
 	var processedEvent storage.ProcessedEvent[any]
 
 	result, err := de.CreateAgentSummary(te.RawMessage, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)

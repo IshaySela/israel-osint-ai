@@ -59,7 +59,7 @@ func (rl *RabbitClient) ListenForRawEvents(ctx context.Context, proc EventProces
 			}
 			rl.pool.Submit(func() {
 				if err := proc.Process(ctx, event); err != nil {
-					log.Printf("Failed to process event, requeueing: %v", err)
+					log.Printf("Failed to process event: %v", err)
 					d.Nack(false, true)
 				} else {
 					d.Ack(false)
@@ -88,7 +88,7 @@ func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte)
 	)
 }
 
-func (rl *RabbitClient) PublishProcessedEvent(ev storage.IProcessedEvent, dbId string) error {
+func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent[any], dbId string) error {
 	msg := CreateMessageFromEvent(ev, dbId)
 
 	body, err := json.Marshal(msg)

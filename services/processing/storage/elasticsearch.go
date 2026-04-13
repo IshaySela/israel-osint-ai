@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -43,7 +44,7 @@ func (esc *ElasticsearchClient) Setup(addresses []string) error {
 	return nil
 }
 
-func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event IProcessedEvent) (error, string) {
+func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event ProcessedEvent[any]) (error, string) {
 	if esc.client == nil {
 		return fmt.Errorf("elasticsearch client not initialized, call Setup first"), ""
 	}
@@ -56,7 +57,12 @@ func (esc *ElasticsearchClient) IndexEvent(ctx context.Context, event IProcessed
 	if err != nil {
 		return fmt.Errorf("error indexing event to elasticsearch: %w", err), ""
 	}
+	var shortSummary string = event.Summary
+	if len(event.Summary) > 30 {
+		shortSummary = shortSummary[:30]
+	}
 
+	log.Printf("Indexed event from %s (%s) to %s", event.Source, shortSummary, esc.cfg.ProcessedEventsIndex)
 	return nil, res.Id_
 }
 

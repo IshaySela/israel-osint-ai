@@ -4,11 +4,6 @@ import (
 	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
 )
 
-type IProcessedEvent interface {
-	// the empty interface is used in place where a func expects either type
-	// of processed event
-}
-
 type ProcessedEvent[T any] struct {
 	RawMessage     string            `json:"raw_message"`
 	Summary        string            `json:"summary"`
