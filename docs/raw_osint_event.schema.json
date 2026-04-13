@@ -4,15 +4,25 @@
   "description": "Base class for all unprocessed osint events",
   "type": "object",
   "properties": {
-    "id": {
-      "type": "string"
+    "app_ev_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID generated at the scraper level"
+    },
+    "raw_message": {
+      "type": "string",
+      "description": "The full raw message text from the source"
     },
     "timestamp": {
       "type": "string"
     },
     "source": {
       "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "description": "Source-specific fields. Shape depends on source."
     }
   },
-  "required": ["id", "timestamp", "source"]
+  "required": ["app_ev_id", "raw_message", "timestamp", "source", "data"]
 }
