@@ -5,15 +5,20 @@ mock="{
   \"source\": \"telegram\",
   \"summary\": \"נפילת טיל בסמוך לצומת גלילות. כוחות ביטחון בדרך לאזור.\",
   \"timestamp_epoch\": 1744372800,
-  \"channel_title\": \"mock\",
-  \"channel_main_lang\": \"he\",
   \"locations\": [
     {
       \"name\": \"צומת גלילות\",
       \"lat\": \"32.1094\",
       \"lon\": \"34.8374\"
     }
-  ]
+  ],
+  \"data\": {
+    \"event_type\": \"security_incident\",
+    \"chat_id\": -1003756841569,
+    \"channel_title\": \"mock\",
+    \"channel_main_lang\": \"he\",
+    \"msg_id\": 99999
+  }
 }"
 
 if command -v amqp-publish > /dev/null 2>&1; then
