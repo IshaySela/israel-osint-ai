@@ -2,6 +2,7 @@ package processor
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -33,13 +34,25 @@ func (p *Processor) Process(ctx context.Context, rawEvent models.RawOsintEvent) 
 	var processedEvent storage.IProcessedEvent
 	var err error
 
-	switch event := rawEvent.(type) {
-	case models.RawTelegramEvent:
-		processedEvent, err = p.processTelegramEvent(event, ctx)
+	switch rawEvent.Source {
+	case "telegram":
+		var tgData models.TelegramEventData
+		err = json.Unmarshal(rawEvent.Data, &tgData)
+
+		if err != nil {
+			return fmt.Errorf("Error while parsing data: %v", err)
+		}
+
+		tgEvent := models.RawTelegramEvent{
+			RawOsintEvent: rawEvent,
+			Data:          tgData,
+		}
+
+		processedEvent, err = p.processTelegramEvent(tgEvent, ctx)
 	default:
 		err = fmt.Errorf("Unsupported event type given: %T", rawEvent)
 	}
-
+	fmt.Printf("%v", err)
 	err, docId := p.ESClient.IndexEvent(ctx, processedEvent)
 	if err != nil {
 		return fmt.Errorf("error indexing event to elasticsearch: %w", err)

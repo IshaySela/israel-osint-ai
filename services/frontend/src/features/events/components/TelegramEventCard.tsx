@@ -1,6 +1,6 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setSelectedEvent } from '../store/eventSlice';
+import { setSelectedEvent, isTelegramEventData } from '../store/eventSlice';
 import type { TelegramEvent } from '../store/eventSlice';
 import type { RootState } from '../../../store';
 
@@ -18,7 +18,8 @@ const TelegramEventCard: React.FC<TelegramEventCardProps> = ({ event }) => {
     minute: '2-digit',
   });
 
-  const metadata = [event.source, event.channel_title, event.channel_main_lang]
+  const eventData = isTelegramEventData(event.data) ? event.data : null;
+  const metadata = [event.source, eventData?.channel_title, eventData?.channel_main_lang]
     .filter(Boolean)
     .join(' | ');
 

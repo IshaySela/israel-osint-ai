@@ -7,18 +7,31 @@ export interface Location {
   lon: string;
 }
 
-export interface OsintEvent {
+export interface OsintEvent<T = unknown> {
   source: string;
   timestamp_epoch: number;
   summary: string;
+  raw_message: string;
   locations: Location[];
+  data: T;
 }
 
-export interface TelegramEvent extends OsintEvent {
-  source: 'telegram';
-  raw_message: string;
+export interface TelegramEventData {
   channel_title: string;
   channel_main_lang: string;
+}
+
+export function isTelegramEventData(data: unknown): data is TelegramEventData {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    typeof (data as TelegramEventData).channel_title === 'string' &&
+    typeof (data as TelegramEventData).channel_main_lang === 'string'
+  );
+}
+
+export interface TelegramEvent extends OsintEvent<TelegramEventData> {
+  source: 'telegram';
 }
 
 export type AnyOsintEvent = TelegramEvent;

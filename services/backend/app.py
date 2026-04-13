@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from ariadne.asgi import GraphQL
-from ariadne import load_schema_from_path, make_executable_schema, QueryType
+from ariadne import load_schema_from_path, make_executable_schema, QueryType, ScalarType
 from typing import Any, Dict, List, Optional, AsyncGenerator
 from elasticsearch_client import get_es_client, ESClient
 from config import get_config, Config
@@ -37,6 +37,7 @@ BASE_DIR: str = os.path.dirname(os.path.abspath(__file__))
 schema_path: str = os.path.join(BASE_DIR, "schema.graphql")
 type_defs: str = load_schema_from_path(schema_path)
 query: QueryType = QueryType()
+json_scalar: ScalarType = ScalarType("JSON")
 
 @query.field("latestEvents")
 def resolve_latest_events(*_: Any) -> List[Dict[str, Any]]:
@@ -52,7 +53,7 @@ def resolve_events(*_: Any, fromMinutesAgo: int, toMinutesAgo: int) -> List[Dict
         return []
     return get_es_client().get_events_in_range(from_minutes_ago=from_m, to_minutes_ago=to_m)
 
-schema: Any = make_executable_schema(type_defs, query)
+schema: Any = make_executable_schema(type_defs, query, json_scalar)
 graphql_app = GraphQL(schema, debug=cfg.debug)
 
 # Message Broker for SSE

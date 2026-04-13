@@ -14,7 +14,7 @@ type TelegramEventData struct {
 }
 
 type RawTelegramEvent struct {
-	rawOsintEvent
+	RawOsintEvent
 	Data TelegramEventData `json:"data"`
 }
 

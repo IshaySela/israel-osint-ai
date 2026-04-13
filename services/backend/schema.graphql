@@ -1,3 +1,5 @@
+scalar JSON
+
 type Location {
     name: String!
     lat: String!
@@ -9,9 +11,8 @@ type Event {
     summary: String!
     timestamp_epoch: Int!
     locations: [Location!]!
-    channel_title: String!
-    channel_main_lang: String!
     source: String!
+    data: JSON!
 }
 
 type Query {
