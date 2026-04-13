@@ -2,7 +2,6 @@ package processor
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
 
@@ -34,25 +33,10 @@ func (p *Processor) Process(ctx context.Context, rawEvent models.RawOsintEvent) 
 	var processedEvent storage.IProcessedEvent
 	var err error
 
-	switch rawEvent.Source {
-	case "telegram":
-		var tgData models.TelegramEventData
-		err = json.Unmarshal(rawEvent.Data, &tgData)
-
-		if err != nil {
-			return fmt.Errorf("Error while parsing data: %v", err)
-		}
-
-		tgEvent := models.RawTelegramEvent{
-			RawOsintEvent: rawEvent,
-			Data:          tgData,
-		}
-
-		processedEvent, err = p.processTelegramEvent(tgEvent, ctx)
-	default:
-		err = fmt.Errorf("Unsupported event type given: %T", rawEvent)
+	processedEvent, err = p.processGeospatialEvent(rawEvent, ctx)
+	if err != nil {
+		return err
 	}
-	fmt.Printf("%v", err)
 	err, docId := p.ESClient.IndexEvent(ctx, processedEvent)
 	if err != nil {
 		return fmt.Errorf("error indexing event to elasticsearch: %w", err)
@@ -87,8 +71,8 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 	return result
 }
 
-func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context.Context) (storage.IProcessedEvent, error) {
-	var processedEvent storage.ProcessedTelegramEvent
+func (p *Processor) processGeospatialEvent(te models.RawOsintEvent, ctx context.Context) (storage.IProcessedEvent, error) {
+	var processedEvent storage.ProcessedEvent[any]
 
 	result, err := de.CreateAgentSummary(te.RawMessage, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
 	if err != nil {
@@ -112,7 +96,7 @@ func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context
 		})
 	}
 
-	processedEvent = storage.ProcessedTelegramEvent{
+	processedEvent = storage.ProcessedEvent[any]{
 		RawMessage:     te.RawMessage,
 		Summary:        result.HeSummary,
 		Locations:      locations,
