@@ -6,31 +6,31 @@
     { "$ref": "./raw_osint_event.schema.json" }
   ],
   "properties": {
-    "id": {
-      "type": "string"
-    },
-    "timestamp": {
-      "type": "string"
-    },
     "source": {
       "type": "string",
       "const": "telegram"
     },
-    "text": {
-      "type": "string"
-    },
-    "event_type": {
-      "type": "string"
-    },
-    "chat_id": {
-      "type": "integer"
-    },
-    "channel_title": {
-      "type": "string"
-    },
-    "message_id": {
-      "type": "integer"
+    "data": {
+      "type": "object",
+      "properties": {
+        "event_type": {
+          "type": "string"
+        },
+        "chat_id": {
+          "type": "integer"
+        },
+        "channel_title": {
+          "type": "string"
+        },
+        "channel_main_lang": {
+          "type": "string"
+        },
+        "msg_id": {
+          "type": "integer"
+        }
+      },
+      "required": ["event_type", "chat_id", "channel_title", "channel_main_lang", "msg_id"]
     }
   },
-  "required": ["id", "timestamp", "source", "text", "event_type", "chat_id", "channel_title", "message_id"]
+  "required": ["source", "data"]
 }

@@ -30,14 +30,13 @@ func NewProcessor(cfg *config.Config, geocoder *de.GeocodingService, esClient *s
 }
 
 func (p *Processor) Process(ctx context.Context, rawEvent models.RawOsintEvent) error {
-	var processedEvent storage.IProcessedEvent
+	var processedEvent storage.ProcessedEvent[any]
 	var err error
 
-	switch event := rawEvent.(type) {
-	case models.RawTelegramEvent:
-		processedEvent, err = p.processTelegramEvent(event, ctx)
-	default:
-		err = fmt.Errorf("Unsupported event type given: %T", rawEvent)
+	processedEvent, err = p.processGeospatialEvent(rawEvent, ctx)
+
+	if err != nil {
+		return err
 	}
 
 	err, docId := p.ESClient.IndexEvent(ctx, processedEvent)
@@ -74,10 +73,10 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 	return result
 }
 
-func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context.Context) (storage.IProcessedEvent, error) {
-	var processedEvent storage.ProcessedTelegramEvent
+func (p *Processor) processGeospatialEvent(te models.RawOsintEvent, ctx context.Context) (storage.ProcessedEvent[any], error) {
+	var processedEvent storage.ProcessedEvent[any]
 
-	result, err := de.CreateAgentSummary(te.Text, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
+	result, err := de.CreateAgentSummary(te.RawMessage, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
 	if err != nil {
 		return processedEvent, fmt.Errorf("error extracting info: %w", err)
 	}
@@ -99,16 +98,13 @@ func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context
 		})
 	}
 
-	processedEvent = storage.ProcessedTelegramEvent{
-		ProcessedEvent: storage.ProcessedEvent{
-			RawMessage:     te.Text,
-			Summary:        result.HeSummary,
-			Locations:      locations,
-			TimestampEpoch: models.ParseToEpoch(te.Timestamp),
-			Source:         te.Source,
-		},
-		ChannelTitle:    te.ChannelTitle,
-		ChannelMainLang: te.ChannelMainLang,
+	processedEvent = storage.ProcessedEvent[any]{
+		RawMessage:     te.RawMessage,
+		Summary:        result.HeSummary,
+		Locations:      locations,
+		TimestampEpoch: models.ParseToEpoch(te.Timestamp),
+		Source:         te.Source,
+		Data:           te.Data,
 	}
 
 	return processedEvent, nil

@@ -1,5 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
+import { z } from 'zod';
 
 export interface Location {
   name: string;
@@ -7,18 +8,28 @@ export interface Location {
   lon: string;
 }
 
-export interface OsintEvent {
+export interface OsintEvent<T = unknown> {
   source: string;
   timestamp_epoch: number;
   summary: string;
+  raw_message: string;
   locations: Location[];
+  data: T;
 }
 
-export interface TelegramEvent extends OsintEvent {
+export const TelegramEventDataSchema = z.object({
+  channel_title: z.string(),
+  channel_main_lang: z.string(),
+});
+
+export type TelegramEventData = z.infer<typeof TelegramEventDataSchema>;
+
+export function isTelegramEventData(data: unknown): data is TelegramEventData {
+  return TelegramEventDataSchema.safeParse(data).success;
+}
+
+export interface TelegramEvent extends OsintEvent<TelegramEventData> {
   source: 'telegram';
-  raw_message: string;
-  channel_title: string;
-  channel_main_lang: string;
 }
 
 export type AnyOsintEvent = TelegramEvent;

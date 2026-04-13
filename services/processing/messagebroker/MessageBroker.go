@@ -30,6 +30,75 @@ func NewRabbitClient(config *config.Config, pool *workerpool.WorkerPool) RabbitC
 	return RabbitClient{config: config, pool: pool}
 }
 
+func (rl *RabbitClient) ListenForRawEvents(ctx context.Context, proc EventProcessor) error {
+	if err := rl.setup(); err != nil {
+		return err
+	}
+
+	msgs, err := rl.channel.Consume(
+		rl.queue.Name, // queue
+		"",            // consumer
+		false,         // auto-ack = false
+		false,         // exclusive
+		false,         // no-local
+		false,         // no-wait
+		nil,           // args
+	)
+
+	if err != nil {
+		return errors.New("failed to register a consumer")
+	}
+
+	go func() {
+		for d := range msgs {
+			event, err := models.ParseRawOsintEvent(d.Body)
+			if err != nil {
+				log.Printf("Failed to unmarshal message, discarding: %v", err)
+				d.Nack(false, false)
+				continue
+			}
+			rl.pool.Submit(func() {
+				if err := proc.Process(ctx, event); err != nil {
+					log.Printf("Failed to process event: %v", err)
+					d.Nack(false, true)
+				} else {
+					d.Ack(false)
+				}
+			})
+		}
+	}()
+
+	return nil
+}
+
+func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte) error {
+	if rl.channel == nil {
+		return errors.New("failed to publish message, channel not initialized")
+	}
+
+	return rl.channel.Publish(
+		exchange,
+		routingKey,
+		false, // mandatory
+		false, // immediate
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
+}
+
+func (rl *RabbitClient) PublishProcessedEvent(ev storage.ProcessedEvent[any], dbId string) error {
+	msg := CreateMessageFromEvent(ev, dbId)
+
+	body, err := json.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	return rl.Publish(rl.config.ProcessedEventsExchange, "", body)
+}
+
 func (rl *RabbitClient) setup() error {
 	conn, err := amqp.Dial(rl.config.RabbitMQURL)
 	if err != nil {
@@ -93,73 +162,4 @@ func (rl *RabbitClient) setup() error {
 	rl.channel = ch
 	rl.queue = &q
 	return nil
-}
-
-func (rl *RabbitClient) ListenForRawEvents(ctx context.Context, proc EventProcessor) error {
-	if err := rl.setup(); err != nil {
-		return err
-	}
-
-	msgs, err := rl.channel.Consume(
-		rl.queue.Name, // queue
-		"",            // consumer
-		false,         // auto-ack = false
-		false,         // exclusive
-		false,         // no-local
-		false,         // no-wait
-		nil,           // args
-	)
-
-	if err != nil {
-		return errors.New("failed to register a consumer")
-	}
-
-	go func() {
-		for d := range msgs {
-			event, err := models.ParseRawOsintEvent(d.Body)
-			if err != nil {
-				log.Printf("Failed to unmarshal message, discarding: %v", err)
-				d.Nack(false, false)
-				continue
-			}
-			rl.pool.Submit(func() {
-				if err := proc.Process(ctx, event); err != nil {
-					log.Printf("Failed to process event, requeueing: %v", err)
-					d.Nack(false, true)
-				} else {
-					d.Ack(false)
-				}
-			})
-		}
-	}()
-
-	return nil
-}
-
-func (rl *RabbitClient) Publish(exchange string, routingKey string, body []byte) error {
-	if rl.channel == nil {
-		return errors.New("failed to publish message, channel not initialized")
-	}
-
-	return rl.channel.Publish(
-		exchange,
-		routingKey,
-		false, // mandatory
-		false, // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
-		},
-	)
-}
-
-func (rl *RabbitClient) PublishProcessedEvent(ev storage.IProcessedEvent, dbId string) error {
-	msg := CreateMessageFromEvent(ev, dbId)
-
-	body, err := json.Marshal(msg)
-	if err != nil {
-		return err
-	}
-
-	return rl.Publish(rl.config.ProcessedEventsExchange, "", body)
 }

@@ -31,9 +31,8 @@ class ESClient:
                     "summary": source.get("summary", ""),
                     "timestamp_epoch": source.get("timestamp_epoch", 0),
                     "locations": source.get("locations", []),
-                    "channel_title": source.get("channel_title", ""),
-                    "channel_main_lang": source.get("channel_main_lang", ""),
                     "source": source.get("source", ""),
+                    "data": source.get("data", {}),
                 })
             logger.info(f"Retrived {len(events)} events from the database")
             return events
@@ -62,9 +61,8 @@ class ESClient:
                     "summary": source.get("summary", ""),
                     "timestamp_epoch": source.get("timestamp_epoch", 0),
                     "locations": source.get("locations", []),
-                    "channel_title": source.get("channel_title", ""),
-                    "channel_main_lang": source.get("channel_main_lang", ""),
                     "source": source.get("source", ""),
+                    "data": source.get("data", {}),
                 })
             logger.info(f"Retrieved {len(events)} events in range [{range_from} → {range_to}]")
             return events

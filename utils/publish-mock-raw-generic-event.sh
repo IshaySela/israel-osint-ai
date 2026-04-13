@@ -1,17 +1,11 @@
 #!/bin/bash
 
 mock="{
-  \"app_ev_id\": \"tg_99999\",
-  \"source\": \"telegram\",
-  \"timestamp\": \"2026-04-11T12:00:00+00:00\",
+  \"app_ev_id\": \"generic_99999\",
+  \"source\": \"twitter\",
+  \"timestamp\": \"2026-04-13T12:00:00+00:00\",
   \"raw_message\": \"דיווח: פיצוץ חזק נשמע בסמוך לצומת גלילות. כוחות ביטחון בדרך לאזור.\",
-  \"data\": {
-    \"event_type\": \"security_incident\",
-    \"chat_id\": -1003756841569,
-    \"channel_title\": \"test\",
-    \"channel_main_lang\": \"he\",
-    \"msg_id\": 99999
-  }
+  \"data\": {}
 }"
 
 if command -v amqp-publish > /dev/null 2>&1; then
