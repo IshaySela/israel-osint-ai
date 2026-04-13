@@ -19,6 +19,5 @@ type ProcessedEvent struct {
 
 type ProcessedTelegramEvent struct {
 	ProcessedEvent
-	ChannelTitle    string `json:"channel_title"`
-	ChannelMainLang string `json:"channel_main_lang"`
+	Data interface{} `json:"data"`
 }

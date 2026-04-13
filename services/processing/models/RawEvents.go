@@ -5,14 +5,17 @@ import (
 	"fmt"
 )
 
-type RawTelegramEvent struct {
-	rawOsintEvent
-	Text            string `json:"text"`
+type TelegramEventData struct {
 	EventType       string `json:"event_type"`
 	ChatID          int64  `json:"chat_id"`
 	ChannelTitle    string `json:"channel_title"`
 	ChannelMainLang string `json:"channel_main_lang"`
-	MessageID       int    `json:"message_id"`
+	MsgID           int    `json:"msg_id"`
+}
+
+type RawTelegramEvent struct {
+	rawOsintEvent
+	Data TelegramEventData `json:"data"`
 }
 
 func (e *RawTelegramEvent) Unmarshal(data []byte) error {

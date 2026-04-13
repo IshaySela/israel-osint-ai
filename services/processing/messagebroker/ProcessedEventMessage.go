@@ -14,11 +14,10 @@ type ProcessedEventMessage interface{}
 
 type ProcessedTelegramEvMessage struct {
 	EventsMessageFields
-	Summary         string            `json:"summary"`
-	Locations       []models.Location `json:"locations"`
-	TimestampEpoch  int64             `json:"timestamp_epoch"`
-	ChannelTitle    string            `json:"channel_title"`
-	ChannelMainLang string            `json:"channel_main_lang"`
+	Summary        string            `json:"summary"`
+	Locations      []models.Location `json:"locations"`
+	TimestampEpoch int64             `json:"timestamp_epoch"`
+	Data           interface{}       `json:"data"`
 }
 
 // CreateMessageFromEvent recives an event of some types and creates a message for the message
@@ -33,11 +32,10 @@ func CreateMessageFromEvent(ievent storage.IProcessedEvent, dbId string) Process
 				DbId:   dbId,
 				Source: event.Source,
 			},
-			Summary:         event.Summary,
-			Locations:       event.Locations,
-			TimestampEpoch:  event.TimestampEpoch,
-			ChannelTitle:    event.ChannelTitle,
-			ChannelMainLang: event.ChannelMainLang,
+			Summary:        event.Summary,
+			Locations:      event.Locations,
+			TimestampEpoch: event.TimestampEpoch,
+			Data:           event.Data,
 		}
 	default:
 		result = nil

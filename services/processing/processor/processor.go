@@ -77,7 +77,7 @@ func (p *Processor) handleGeocodeError(err *geocodeerrors.GeocodeError) error {
 func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context.Context) (storage.IProcessedEvent, error) {
 	var processedEvent storage.ProcessedTelegramEvent
 
-	result, err := de.CreateAgentSummary(te.Text, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
+	result, err := de.CreateAgentSummary(te.RawMessage, ctx, p.Cfg.OpenAIKey, p.Cfg.OpenAIModel)
 	if err != nil {
 		return processedEvent, fmt.Errorf("error extracting info: %w", err)
 	}
@@ -101,14 +101,13 @@ func (p *Processor) processTelegramEvent(te models.RawTelegramEvent, ctx context
 
 	processedEvent = storage.ProcessedTelegramEvent{
 		ProcessedEvent: storage.ProcessedEvent{
-			RawMessage:     te.Text,
+			RawMessage:     te.RawMessage,
 			Summary:        result.HeSummary,
 			Locations:      locations,
 			TimestampEpoch: models.ParseToEpoch(te.Timestamp),
 			Source:         te.Source,
 		},
-		ChannelTitle:    te.ChannelTitle,
-		ChannelMainLang: te.ChannelMainLang,
+		Data: te.Data,
 	}
 
 	return processedEvent, nil

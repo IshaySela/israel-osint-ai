@@ -8,9 +8,10 @@ import (
 type RawOsintEvent interface{}
 
 type rawOsintEvent struct {
-	ID        string `json:"id"`
-	Timestamp string `json:"timestamp"`
-	Source    string `json:"source"`
+	AppEvId    string `json:"AppEvId"`
+	RawMessage string `json:"rawMessage"`
+	Timestamp  string `json:"timestamp"`
+	Source     string `json:"source"`
 }
 
 func ParseRawOsintEvent(b []byte) (RawOsintEvent, error) {
