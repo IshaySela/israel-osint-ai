@@ -15,6 +15,8 @@ import { EventPopup } from './EventPopup';
 
 interface MuniProperties {
   CR_PNIM: string;
+  Muni_Eng: string;
+  Muni_Heb: string;
   [key: string]: unknown;
 }
 
@@ -39,15 +41,15 @@ const EventMap: React.FC = () => {
       .then(setMuniData);
   }, []);
 
-  const litMuniIds = useMemo<Set<string>>(() => {
-    if (!muniData) return new Set();
+  const muniEventCounts = useMemo<Map<string, number>>(() => {
+    if (!muniData) return new Map();
     const pts = events.flatMap(e => e.locations.map(l => point([parseFloat(l.lon), parseFloat(l.lat)])));
-    const lit = new Set<string>();
+    const counts = new Map<string, number>();
     for (const feature of muniData.features) {
-      if (pts.some(pt => booleanPointInPolygon(pt, feature)))
-        lit.add(feature.properties.CR_PNIM);
+      const count = pts.filter(pt => booleanPointInPolygon(pt, feature)).length;
+      if (count > 0) counts.set(feature.properties.CR_PNIM, count);
     }
-    return lit;
+    return counts;
   }, [muniData, events]);
 
   return (
@@ -70,9 +72,19 @@ const EventMap: React.FC = () => {
             data={muniData}
             style={(feature) => {
               const id = (feature?.properties as MuniProperties | null)?.CR_PNIM;
-              return id && litMuniIds.has(id)
+              return id && muniEventCounts.has(id)
                 ? { color: '#22d3ee', weight: 1.5, fillOpacity: 0.2, fillColor: '#22d3ee' }
                 : { color: 'transparent', weight: 0, fillOpacity: 0 };
+            }}
+            onEachFeature={(feature, layer) => {
+              const props = feature.properties as MuniProperties;
+              const count = muniEventCounts.get(props.CR_PNIM);
+              if (count) {
+                layer.bindTooltip(
+                  `<div style="font-family:monospace;font-size:11px"><b>${props.Muni_Eng}</b><br/>${count} event${count > 1 ? 's' : ''}</div>`,
+                  { sticky: true }
+                );
+              }
             }}
           />
         )}
