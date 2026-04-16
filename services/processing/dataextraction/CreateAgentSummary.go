@@ -15,8 +15,8 @@ Summarize the event described in the user text and extract the locations data fr
 }`
 
 type AgentSummary struct {
-	EnLocations []string `json:"enLocations" jsonschema_description:"List of city/towns/areas extracted from the text."`
-	HeSummary   string   `json:"heSummary" jsonschema_description:"Short event summary in hebrew if the event is in hebrew, otherwise in english."`
+	Locations []string `json:"enLocations" jsonschema_description:"List of city/towns/areas extracted from the text."`
+	HeSummary string   `json:"heSummary" jsonschema_description:"Short event summary in hebrew if the event is in hebrew, otherwise in english."`
 }
 
 /*Create a JSON schema for the agent summary response*/
