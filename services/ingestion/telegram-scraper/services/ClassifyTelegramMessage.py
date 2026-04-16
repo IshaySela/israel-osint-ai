@@ -1,9 +1,11 @@
-from dataclasses import dataclass
+import logging
 from typing import Annotated, Dict
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, ContentFilterFinishReasonError, LengthFinishReasonError
 from .Configuration import TelegramScraperConfig
 from enum import Enum
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 class EventTypes(str,Enum):
     """The text indicates the launch or interception of rockets, missiles, or mortar fire."""
@@ -30,7 +32,7 @@ def build_events_description() -> str:
 
 class EventClassifierResponse(BaseModel):
     event_type: Annotated[EventTypes,
-                           Field(description=build_events_description())]
+                Field(description=build_events_description())]
 
 
 config = TelegramScraperConfig.get()
@@ -48,16 +50,24 @@ Map each input to exactly one of the defined labels.
 """
 
 async def classify_telegram_msg(message: str) -> EventTypes:
-    result = await client.responses.parse(
-        input=[
-            { "role": "system", "content": developerPrompt },
-            {"role": "user", "content": message }
-        ],
-        model="gpt-5-nano-2025-08-07",
-        text_format=EventClassifierResponse
-    )
+    event_type: EventTypes = EventTypes.not_relevant
     
-    if result.output_parsed is None:
-        return EventTypes.not_relevant
+    try:
+        result = await client.responses.parse(
+            input=[
+                { "role": "system", "content": developerPrompt },
+                {"role": "user", "content": message }
+            ],
+            model="gpt-5-nano-2025-08-07",
+            text_format=EventClassifierResponse
+        )
+        
+        if result.output_parsed is not None:
+            event_type = result.output_parsed.event_type
+    except ContentFilterFinishReasonError:
+        logger.error("Content filter triggered for message: %.100s", message)
+    except LengthFinishReasonError:
+        logger.error("Response length limit exceeded for message: %.100s", message)
     
-    return result.output_parsed.event_type
+    
+    return event_type
