@@ -22,7 +22,7 @@ def build_events_description() -> str:
     
     for event in EventTypes:
         if event.__doc__ is None:
-            raise ValueError(f"Event {event} is missing a description docstring.")
+            raise RuntimeError(f"Event {event} is missing a description docstring.")
         descriptions[event] = event.__doc__.strip()
     
     return "\n".join([f"{key.value}: {value}" for key, value in descriptions.items()])
