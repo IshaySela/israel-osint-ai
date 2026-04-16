@@ -12,7 +12,7 @@ class EventTypes(str,Enum):
     """The text indicates a usage of firearms fire in a security settings (not criminal)"""
     attack = "attack"
     """Hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by specific projectile or firearm labels."""
-    missle_hit = "missle_hit"
+    missile_hit = "missile_hit"
     """Any place that was hit by a missile or rocket."""
     not_relevant = "not_relevant"
     """The content does not meet the criteria for any defined tactical event labels."""
