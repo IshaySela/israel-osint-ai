@@ -1,22 +1,24 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
-
-interface MuniProperties {
-  CR_PNIM: string;
-  [key: string]: unknown;
-}
+import { createPulseIcon } from './CreatePulseIcon'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../store';
 import { setSelectedEvent } from '../../events/store/eventSlice';
 import 'leaflet/dist/leaflet.css';
-
+import MapRecenter from './MapRecenter';
 // Fix for default Leaflet icon
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+interface MuniProperties {
+  CR_PNIM: string;
+  [key: string]: unknown;
+}
+
 
 const DefaultIcon = L.icon({
   iconUrl: markerIcon,
@@ -27,37 +29,6 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Custom Marker Creator
-const createPulseIcon = (isSelected: boolean) => {
-  return L.divIcon({
-    className: 'custom-pulse-icon',
-    html: `
-      <div class="relative flex items-center justify-center">
-        <div class="absolute w-4 h-4 rounded-full bg-cyan-500 ${isSelected ? 'animate-ping scale-150' : 'animate-pulse opacity-50'}"></div>
-        <div class="relative w-3 h-3 rounded-full bg-cyan-400 border border-white shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-      </div>
-    `,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  });
-};
-
-// Map Recenter Component
-const MapRecenter: React.FC = () => {
-  const map = useMap();
-  const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
-
-  useEffect(() => {
-    if (selectedEvent && selectedEvent.locations.length > 0) {
-      const { lat, lon } = selectedEvent.locations[0];
-      map.flyTo([parseFloat(lat), parseFloat(lon)], 13, {
-        duration: 1.5,
-      });
-    }
-  }, [selectedEvent, map]);
-
-  return null;
-};
 
 const EventMap: React.FC = () => {
   const dispatch = useDispatch();
@@ -136,17 +107,6 @@ const EventMap: React.FC = () => {
         )}
       </MapContainer>
       
-      {/* Legend / Overlay Controls can go here */}
-      <div className="absolute bottom-6 right-6 z-1000 pointer-events-none">
-        <div className="bg-slate-950/80 backdrop-blur-md border border-cyan-500/20 p-3 rounded text-[10px] font-mono text-cyan-500 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.8)]"></span>
-            ACTIVE OSINT EVENT
-          </div>
-          <div className="opacity-50">SRCE: TELEGRAM_SCRAPER</div>
-          <div className="opacity-50">LYR: CARTODB_DARK</div>
-        </div>
-      </div>
     </div>
   );
 };
