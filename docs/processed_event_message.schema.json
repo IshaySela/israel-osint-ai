@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "processed_event_message.schema.json",
+  "title": "ProcessedEventMessage",
+  "description": "Message published to the processed_events RabbitMQ exchange by the processing service after a raw event has been enriched, summarised, and indexed in Elasticsearch. raw_message is not included — it is stored in Elasticsearch but stripped before publishing.",
+  "type": "object",
+  "properties": {
+    "dbId": {
+      "type": "string",
+      "description": "Elasticsearch document _id assigned at index time."
+    },
+    "source": {
+      "type": "string",
+      "description": "Passed through from the originating raw event (e.g. telegram)."
+    },
+    "summary": {
+      "type": "string",
+      "description": "LLM-generated summary of the event."
+    },
+    "timestamp_epoch": {
+      "type": "integer",
+      "description": "Event time as Unix epoch seconds."
+    },
+    "locations": {
+      "type": "array",
+      "description": "Geocoded locations extracted from the event text.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Location name as returned by the geocoding service."
+          },
+          "lat": {
+            "type": "string",
+            "description": "Latitude as a decimal string, e.g. '32.1094'."
+          },
+          "lon": {
+            "type": "string",
+            "description": "Longitude as a decimal string, e.g. '34.8374'."
+          }
+        },
+        "required": ["name", "lat", "lon"],
+        "additionalProperties": false
+      }
+    },
+    "data": {
+      "type": "object",
+      "description": "Source-specific payload passed through from the raw event. Shape depends on the value of source.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["dbId", "source", "summary", "timestamp_epoch", "locations", "data"]
+}
