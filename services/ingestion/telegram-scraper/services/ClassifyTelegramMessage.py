@@ -2,6 +2,23 @@ from dataclasses import dataclass
 from typing import Literal, get_args, TypeGuard, TypedDict
 from openai import AsyncOpenAI
 from .Configuration import TelegramScraperConfig
+from enum import Enum
+from pydantic import BaseModel
+
+class EventsClassification(str,Enum):
+    rocket_fire = "rocket_fire"
+    """The text indicates the launch or interception of rockets, missiles, or mortar fire."""
+    shooting = "shooting"
+    """The text indicates a usage of firearms fire in a security settings (not criminal)"""
+    attack = "attack"
+    """Hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by specific projectile or firearm labels."""
+    missle_hit = "missle_hit"
+    """Any place that was hit by a missile or rocket."""
+    not_relevant = "not_relevant"
+    """The content does not meet the criteria for any defined tactical event labels."""
+
+class EventClassifierResponse(BaseModel):
+    event_type: EventsClassification
 
 config = TelegramScraperConfig.get()
 
