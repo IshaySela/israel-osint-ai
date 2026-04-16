@@ -1,18 +1,17 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
 import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
-import { createPulseIcon } from './CreatePulseIcon'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import { point } from '@turf/helpers';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
-import { setSelectedEvent } from '../../events/store/eventSlice';
 import 'leaflet/dist/leaflet.css';
 import MapRecenter from './MapRecenter';
 // Fix for default Leaflet icon
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { EventPopup } from './EventPopup';
 
 interface MuniProperties {
   CR_PNIM: string;
@@ -31,9 +30,7 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 
 const EventMap: React.FC = () => {
-  const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
-  const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
   const [muniData, setMuniData] = useState<FeatureCollection<Polygon | MultiPolygon, MuniProperties> | null>(null);
 
   useEffect(() => {
@@ -81,29 +78,7 @@ const EventMap: React.FC = () => {
         )}
 
         {events.map((event, eventIdx) => 
-          event.locations.map((loc, locIdx) => {
-            const isSelected = selectedEvent?.timestamp_epoch === event.timestamp_epoch && selectedEvent?.raw_message === event.raw_message;
-            return (
-              <Marker
-                key={`${event.timestamp_epoch}-${eventIdx}-${locIdx}`}
-                position={[parseFloat(loc.lat), parseFloat(loc.lon)]}
-                icon={createPulseIcon(isSelected)}
-                eventHandlers={{
-                  click: () => dispatch(setSelectedEvent(event)),
-                }}
-              >
-                <Popup className="custom-popup">
-                  <div className="p-2 dir-rtl text-right">
-                    <h3 className="font-bold text-slate-900 mb-1">{loc.name}</h3>
-                    <p className="text-xs text-slate-700">{event.summary}</p>
-                    <span className="text-[10px] text-slate-500 font-mono mt-2 block">
-                      {new Date(event.timestamp_epoch * 1000).toLocaleString('he-IL')}
-                    </span>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })
+          <div key={`event-popup-${eventIdx}`}><EventPopup event={event} /></div>
         )}
       </MapContainer>
       
