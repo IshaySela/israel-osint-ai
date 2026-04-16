@@ -19,25 +19,25 @@
     },
     "timestamp_epoch": {
       "type": "integer",
-      "description": "Event time as Unix epoch seconds, parsed from the raw event timestamp string."
+      "description": "Event time as Unix epoch seconds."
     },
     "locations": {
       "type": "array",
-      "description": "Geocoded locations extracted from the event text via Nominatim.",
+      "description": "Geocoded locations extracted from the event text.",
       "items": {
         "type": "object",
         "properties": {
           "name": {
             "type": "string",
-            "description": "Location name as returned by Nominatim."
+            "description": "Location name as returned by the geocoding service."
           },
           "lat": {
             "type": "string",
-            "description": "Latitude as a decimal string, e.g. '32.1094'. Kept as string — values are not coerced from Nominatim."
+            "description": "Latitude as a decimal string, e.g. '32.1094'."
           },
           "lon": {
             "type": "string",
-            "description": "Longitude as a decimal string, e.g. '34.8374'. Kept as string — values are not coerced from Nominatim."
+            "description": "Longitude as a decimal string, e.g. '34.8374'."
           }
         },
         "required": ["name", "lat", "lon"],
