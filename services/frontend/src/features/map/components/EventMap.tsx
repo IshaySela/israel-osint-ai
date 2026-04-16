@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import type { GeoJsonObject } from 'geojson';
+import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
+
+interface MuniProperties {
+  CR_PNIM: string;
+  [key: string]: unknown;
+}
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../store';
 import { setSelectedEvent } from '../../events/store/eventSlice';
@@ -56,13 +63,24 @@ const EventMap: React.FC = () => {
   const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
   const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
-  const [muniData, setMuniData] = useState<GeoJsonObject | null>(null);
+  const [muniData, setMuniData] = useState<FeatureCollection<Polygon | MultiPolygon, MuniProperties> | null>(null);
 
   useEffect(() => {
     fetch('/muni_il_compressed.json')
       .then(r => r.json())
       .then(setMuniData);
   }, []);
+
+  const litMuniIds = useMemo<Set<string>>(() => {
+    if (!muniData) return new Set();
+    const pts = events.flatMap(e => e.locations.map(l => point([parseFloat(l.lon), parseFloat(l.lat)])));
+    const lit = new Set<string>();
+    for (const feature of muniData.features) {
+      if (pts.some(pt => booleanPointInPolygon(pt, feature)))
+        lit.add(feature.properties.CR_PNIM);
+    }
+    return lit;
+  }, [muniData, events]);
 
   return (
     <div className="w-full h-full relative z-0">
@@ -82,7 +100,12 @@ const EventMap: React.FC = () => {
         {muniData && (
           <GeoJSON
             data={muniData}
-            style={{ color: '#22d3ee', weight: 1, fillOpacity: 0.05 }}
+            style={(feature) => {
+              const id = (feature?.properties as MuniProperties | null)?.CR_PNIM;
+              return id && litMuniIds.has(id)
+                ? { color: '#22d3ee', weight: 1.5, fillOpacity: 0.2, fillColor: '#22d3ee' }
+                : { color: 'transparent', weight: 0, fillOpacity: 0 };
+            }}
           />
         )}
 
