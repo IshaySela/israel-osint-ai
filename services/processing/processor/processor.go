@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
-	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
-	mb "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
-	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	"processing/config"
+	de "processing/dataextraction"
+	"processing/dataextraction/geocodeerrors"
+	mb "processing/messagebroker"
+	models "processing/models"
+	storage "processing/storage"
 )
 
 type Processor struct {

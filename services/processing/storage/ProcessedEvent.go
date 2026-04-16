@@ -1,7 +1,7 @@
 package storage
 
 import (
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	models "processing/models"
 )
 
 type ProcessedEvent[T any] struct {

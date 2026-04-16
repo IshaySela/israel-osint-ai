@@ -8,8 +8,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	"processing/dataextraction/geocodeerrors"
+	models "processing/models"
 	"golang.org/x/time/rate"
 )
 
