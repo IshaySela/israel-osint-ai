@@ -10,12 +10,8 @@ import (
 	"github.com/openai/openai-go/v3/responses"
 )
 
-const prompt = `You are a proffesional text analayzer. Extract the location data from a text and summarize the event.
-The location should include the city name only.
-Produce output with the following format:
-{
-"enLocations": ["first location, "second location",....],
-"heSummary": "short event summary in hebrew. note only data from the event and nothing else."
+const prompt = `You are a professional text analyzer.
+Summarize the event described in the user text and extract the locations data from the text.
 }`
 
 type AgentSummary struct {
