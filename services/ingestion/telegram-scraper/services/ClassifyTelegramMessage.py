@@ -1,79 +1,73 @@
-from dataclasses import dataclass
-from typing import Literal, get_args, TypeGuard, TypedDict
-from openai import AsyncOpenAI
+import logging
+from typing import Annotated, Dict
+from openai import AsyncOpenAI, ContentFilterFinishReasonError, LengthFinishReasonError
 from .Configuration import TelegramScraperConfig
+from enum import Enum
+from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
+
+class EventTypes(str,Enum):
+    """The text indicates the launch or interception of rockets, missiles, or mortar fire."""
+    rocket_fire = "rocket_fire"
+    """The text indicates a usage of firearms fire in a security settings (not criminal)"""
+    shooting = "shooting"
+    """Hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by specific projectile or firearm labels."""
+    attack = "attack"
+    """Any place that was hit by a missile or rocket."""
+    missile_hit = "missile_hit"
+    """The content does not meet the criteria for any defined labels, or is describing a criminal event"""
+    not_relevant = "not_relevant"
+
+def build_events_description() -> str:
+    descriptions: Dict[EventTypes,str] = {}
+    
+    for event in EventTypes:
+        if event.__doc__ is None:
+            raise RuntimeError(f"Event {event} is missing a description docstring.")
+        descriptions[event] = event.__doc__.strip()
+    
+    return "\n".join([f"{key.value}: {value}" for key, value in descriptions.items()])
+
+
+class EventClassifierResponse(BaseModel):
+    event_type: Annotated[EventTypes,
+                Field(description=build_events_description())]
+
 
 config = TelegramScraperConfig.get()
-
-EventTypes = Literal['rocket_fire', 'shooting', 'attack', 'missle_hit','not_relevant']
-
-@dataclass(frozen=True)
-class EventsDescription(TypedDict):
-    rocket_fire: str
-    shooting: str
-    attack: str
-    missle_hit: str
-    not_relevant: str
-    red_alert: str
-    
-eventsDescription: EventsDescription = {
-    "rocket_fire": "The text indicates the launch or interception of rockets, missiles, or mortar fire.",
-    "shooting": "The text indicates a usage of firearms fire in a security settings (not criminal)",
-    "missle_hit": "Any place that was hit by a missile or rocket.",
-    "attack": "Hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by specific projectile or firearm labels.",
-    "not_relevant": "The content does not meet the criteria for any defined tactical event labels.",
-    "red_alert": "red alerts for incoming missle (this is dif)"
-}
-
-def _create_prompt_mappings(ed: EventsDescription) -> str:
-    """
-    Generates a formatted string mapping event types to their descriptions for use in prompts.
-
-    Args:
-        ed (EventsDescription): A dictionary containing event types as keys and their descriptions as values.
-
-    Returns:
-        str: A newline-separated string where each line follows the format '-key: description'.
-    """
-
-    lines = [f"-{x}: {ed[x]}" for x in ed.keys()]
-    
-    return "\n".join(lines)
-
-def _is_valid_event(event: str) -> TypeGuard[EventTypes]:
-    valid_events = eventsDescription.keys()
-    return event in valid_events
 
 client = AsyncOpenAI(
     api_key=config.openai_api_key
 )
 
-eventsDescriptionPrompt = _create_prompt_mappings(eventsDescription)
 
 developerPrompt = f"""
 You are a specialized Natural Language Processing classifier optimized for analysis of Hebrew security alerts.
 
 Goal: Perform a multiclass classification task on provided Hebrew text strings.
 Map each input to exactly one of the defined labels.
-
-Label Definitions:
-{eventsDescriptionPrompt}
-
-Output Constraints:
-- Return only the label string.
-- Do not include delimiters, preamble, or prose.
 """
 
 async def classify_telegram_msg(message: str) -> EventTypes:
-    result = await client.responses.create(
-        input=message,
-        instructions=developerPrompt,
-        model="gpt-5-nano-2025-08-07"
-    )
+    event_type: EventTypes = EventTypes.not_relevant
     
-    event = result.output_text
+    try:
+        result = await client.responses.parse(
+            input=[
+                { "role": "system", "content": developerPrompt },
+                {"role": "user", "content": message }
+            ],
+            model="gpt-5-nano-2025-08-07",
+            text_format=EventClassifierResponse
+        )
+        
+        if result.output_parsed is not None:
+            event_type = result.output_parsed.event_type
+    except ContentFilterFinishReasonError:
+        logger.error("Content filter triggered for message: %.100s", message)
+    except LengthFinishReasonError:
+        logger.error("Response length limit exceeded for message: %.100s", message)
     
-    if not _is_valid_event(event):
-        return 'not_relevant'
     
-    return event
+    return event_type

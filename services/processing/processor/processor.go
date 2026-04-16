@@ -83,7 +83,7 @@ func (p *Processor) processGeospatialEvent(te models.RawOsintEvent, ctx context.
 
 	log.Printf("AI Summary: %+v\n", result)
 
-	locationMap, geocodeErr := p.Geocoder.GetBatchCoordinates(result.EnLocations)
+	locationMap, geocodeErr := p.Geocoder.GetBatchCoordinates(result.Locations)
 
 	if geocodeErr != nil {
 		return processedEvent, p.handleGeocodeError(geocodeErr)
