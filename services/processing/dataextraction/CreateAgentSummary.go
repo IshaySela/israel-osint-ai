@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/invopop/jsonschema"
 	openai "github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/responses"
@@ -18,8 +19,18 @@ Produce output with the following format:
 }`
 
 type AgentSummary struct {
-	EnLocations []string `json:"enLocations"`
-	HeSummary   string   `json:"heSummary"`
+	EnLocations []string `json:"enLocations" jsonschema_description:"List of city/towns/areas extracted from the text."`
+	HeSummary   string   `json:"heSummary" jsonschema_description:"Short event summary in hebrew if the event is in hebrew, otherwise in english."`
+}
+
+func generateAgentSummarySchema() interface{} {
+	reflector := jsonschema.Reflector{
+		AllowAdditionalProperties: false,
+		DoNotReference:            true,
+	}
+	var v AgentSummary
+	return reflector.Reflect(v)
+
 }
 
 func CreateAgentSummary(rawText string, ctx context.Context, apiKey string, modelName string) (AgentSummary, error) {
