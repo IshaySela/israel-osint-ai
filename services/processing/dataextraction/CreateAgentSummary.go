@@ -23,13 +23,20 @@ type AgentSummary struct {
 	HeSummary   string   `json:"heSummary" jsonschema_description:"Short event summary in hebrew if the event is in hebrew, otherwise in english."`
 }
 
-func generateAgentSummarySchema() interface{} {
+/*Create a JSON schema for the agent summary response*/
+/*The schema is passed to the OpenAI API in order to ensure the response is structured correctly*/
+func generateAgentSummaryResponseSchema() map[string]any {
 	reflector := jsonschema.Reflector{
 		AllowAdditionalProperties: false,
 		DoNotReference:            true,
 	}
 	var v AgentSummary
-	return reflector.Reflect(v)
+	schema := reflector.Reflect(v)
+
+	b, _ := json.Marshal(schema)
+	var m map[string]any
+	json.Unmarshal(b, &m)
+	return m
 
 }
 
@@ -42,7 +49,16 @@ func CreateAgentSummary(rawText string, ctx context.Context, apiKey string, mode
 		Instructions: openai.String(prompt),
 		Input:        responses.ResponseNewParamsInputUnion{OfString: openai.String(rawText)},
 		Model:        openai.ChatModel(modelName),
-	})
+		Text: responses.ResponseTextConfigParam{
+			Format: responses.ResponseFormatTextConfigUnionParam{
+				OfJSONSchema: &responses.ResponseFormatTextJSONSchemaConfigParam{
+					Schema:      generateAgentSummaryResponseSchema(),
+					Name:        "summarize_and_extract_locations",
+					Description: openai.String("Summarize the event and extract the location data from the text."),
+					Strict:      openai.Bool(true),
+				},
+			},
+		}})
 
 	if err != nil {
 		return AgentSummary{}, err
