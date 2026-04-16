@@ -7,7 +7,7 @@ const App: React.FC = () => {
     <div className="h-full w-full bg-slate-950 flex relative overflow-hidden">
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.05),transparent_70%)] pointer-events-none"></div>
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+      <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-cyan-500/50 to-transparent"></div>
 
       {/* Sidebar - Highest Z-Index to stay above map */}
       <div className="z-20 relative pointer-events-auto h-full">

@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from 'react-leaflet';
 import L from 'leaflet';
+import type { GeoJsonObject } from 'geojson';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../../store';
 import { setSelectedEvent } from '../../events/store/eventSlice';
@@ -55,6 +56,13 @@ const EventMap: React.FC = () => {
   const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
   const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
+  const [muniData, setMuniData] = useState<GeoJsonObject | null>(null);
+
+  useEffect(() => {
+    fetch('/muni_il_compressed.json')
+      .then(r => r.json())
+      .then(setMuniData);
+  }, []);
 
   return (
     <div className="w-full h-full relative z-0">
@@ -70,6 +78,13 @@ const EventMap: React.FC = () => {
         />
         
         <MapRecenter />
+
+        {muniData && (
+          <GeoJSON
+            data={muniData}
+            style={{ color: '#22d3ee', weight: 1, fillOpacity: 0.05 }}
+          />
+        )}
 
         {events.map((event, eventIdx) => 
           event.locations.map((loc, locIdx) => {
