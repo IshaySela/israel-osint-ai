@@ -1,24 +1,37 @@
 from dataclasses import dataclass
-from typing import Literal, get_args, TypeGuard, TypedDict
+from typing import Annotated
 from openai import AsyncOpenAI
 from .Configuration import TelegramScraperConfig
 from enum import Enum
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class EventTypes(str,Enum):
-    rocket_fire = "rocket_fire"
     """The text indicates the launch or interception of rockets, missiles, or mortar fire."""
-    shooting = "shooting"
+    rocket_fire = "rocket_fire"
     """The text indicates a usage of firearms fire in a security settings (not criminal)"""
-    attack = "attack"
+    shooting = "shooting"
     """Hostile acts involving physical assault, stabbings, vehicle rammings, or complex tactical incursions not covered by specific projectile or firearm labels."""
-    missile_hit = "missile_hit"
+    attack = "attack"
     """Any place that was hit by a missile or rocket."""
+    missile_hit = "missile_hit"
+    """The content does not meet the criteria for any defined labels, or is describing a criminal event"""
     not_relevant = "not_relevant"
-    """The content does not meet the criteria for any defined tactical event labels."""
+
+def build_events_description() -> str:
+    descriptions = {}
+    
+    for event in EventTypes:
+        if event.__doc__ is None:
+            raise ValueError(f"Event {event} is missing a description docstring.")
+        descriptions[event] = event.__doc__.strip()
+    
+    return "\n".join([f"{key.value}: {value}" for key, value in descriptions.items()])
+
 
 class EventClassifierResponse(BaseModel):
-    event_type: EventTypes
+    event_type: Annotated[EventTypes,
+                           Field(description=build_events_description())]
+
 
 config = TelegramScraperConfig.get()
 
@@ -32,7 +45,6 @@ You are a specialized Natural Language Processing classifier optimized for analy
 
 Goal: Perform a multiclass classification task on provided Hebrew text strings.
 Map each input to exactly one of the defined labels.
-
 """
 
 async def classify_telegram_msg(message: str) -> EventTypes:
