@@ -17,7 +17,7 @@
         "event_type": {
           "type": "string",
           "enum": ["rocket_fire", "shooting", "attack", "missle_hit", "red_alert", "not_relevant"],
-          "description": "Classified event type. Note: 'missle_hit' is the canonical spelling used in the codebase."
+          "description": "Classified event type."
         },
         "chat_id": {
           "type": "integer",
