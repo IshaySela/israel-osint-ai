@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Dict
 from openai import AsyncOpenAI
 from .Configuration import TelegramScraperConfig
 from enum import Enum
@@ -18,7 +18,7 @@ class EventTypes(str,Enum):
     not_relevant = "not_relevant"
 
 def build_events_description() -> str:
-    descriptions = {}
+    descriptions: Dict[EventTypes,str] = {}
     
     for event in EventTypes:
         if event.__doc__ is None:
