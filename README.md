@@ -83,6 +83,5 @@ Basic implementation of the services, ensure that data flows correctly and visua
 - Missing error boundary for EventMap component ([#52](https://github.com/IshaySela/israel-osint-ai/issues/52))
 
 ### Chores
-- Replace deprecated `build.bin` with `build.entrypoint` in `.air.toml` ([#33](https://github.com/IshaySela/israel-osint-ai/issues/33))
 - Add Pydantic model in backend `elasticsearch_client.py` ([#40](https://github.com/IshaySela/israel-osint-ai/issues/40))
 - Define Elasticsearch index mappings for `osint_events` and `geocode_cache` ([#44](https://github.com/IshaySela/israel-osint-ai/issues/44))
