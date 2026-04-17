@@ -48,23 +48,23 @@ Basic implementation of the services, ensure that data flows correctly and visua
 - Core infrastructure services ([#2](https://github.com/IshaySela/israel-osint-ai/issues/2))
 
 ### Sprint 2: Performance & Robustness - Done
-- Persistent geocode result caching with Redis ([#14](https://github.com/IshaySela/israel-osint-ai/issues/14))
+- Persistent geocode result caching with elasticsearch ([#14](https://github.com/IshaySela/israel-osint-ai/issues/14))
 - Events filtering & restrict geocoder to Israel ([#8](https://github.com/IshaySela/israel-osint-ai/issues/8))
-- Worker pool pattern in the processing service ([#19](https://github.com/IshaySela/israel-osint-ai/issues/19))
+- Implemented worker pool in the processing service with default 5 workers the processes events simultaneously ([#19](https://github.com/IshaySela/israel-osint-ai/issues/19))
 - Fixed auto-ack data loss in message broker ([#13](https://github.com/IshaySela/israel-osint-ai/issues/13))
-- Critical bug fixes in ingestion error handling ([#20](https://github.com/IshaySela/israel-osint-ai/issues/20))
+- Improved error handling in the ingestion service ([#20](https://github.com/IshaySela/israel-osint-ai/issues/20))
 
 ### Sprint 3: Reliability & Integrations - Done
 - Improved RabbitMQ configuration with exchanges & DLX ([#22](https://github.com/IshaySela/israel-osint-ai/issues/22))
-- Processing notifications via dedicated exchange ([#21](https://github.com/IshaySela/israel-osint-ai/issues/21))
-- Shared configuration across all services ([#23](https://github.com/IshaySela/israel-osint-ai/issues/23))
+- Processing notifications via dedicated fanout exchange ([#21](https://github.com/IshaySela/israel-osint-ai/issues/21))
+- Shared configuration across all services in /services/shared ([#23](https://github.com/IshaySela/israel-osint-ai/issues/23))
 - SSE notifications between React client and backend ([#26](https://github.com/IshaySela/israel-osint-ai/issues/26))
-- GraphQL query for events in the last 24 hours ([#30](https://github.com/IshaySela/israel-osint-ai/issues/30))
-- Source metadata from telegram scraper ([#28](https://github.com/IshaySela/israel-osint-ai/issues/28))
+- GraphQL query for events in the last 72 hours ([#30](https://github.com/IshaySela/israel-osint-ai/issues/30))
+- Improved metadata from the ingestors ([#28](https://github.com/IshaySela/israel-osint-ai/issues/28))
 
 ### Sprint 4: Map Enrichment & AI Quality - Done
 - Municipality polygon overlay with event count tooltip ([#49](https://github.com/IshaySela/israel-osint-ai/issues/49))
-- Structured outputs with OpenAI API for reliable AI summaries ([#50](https://github.com/IshaySela/israel-osint-ai/issues/50))
+- Structured outputs with OpenAI API for reliable AI workflows ([#50](https://github.com/IshaySela/israel-osint-ai/issues/50))
 - Improved code quality in the Frontend (typing, sepration of components etc.)
 ## Roadmap
 ### Features
