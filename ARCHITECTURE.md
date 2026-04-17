@@ -69,14 +69,14 @@ graph TD
 2. **Queueing** — RabbitMQ decouples ingestion from processing and buffers events under load. Failed messages are routed to a DLX (`dead_letter`).
 
 3. **Processing** — A Go worker pool consumes from the `raw_events` exchange. Each worker:
-   - Sends the raw text to **OpenAI API** to extract English location names and produce a Hebrew summary.
+   - Sends the raw text to **OpenAI API** (via structured outputs) to extract location names and produce a summary.
    - Geocodes each extracted location via **Nominatim**, restricted to Israel. Results are cached in an Elasticsearch `geocode_cache` index to avoid redundant API calls.
    - Indexes the event into the `osint_events` Elasticsearch index.
    - Publishes the processed event to the `processed_events` exchange.
 
 4. **Backend** — A **FastAPI** service with an **Ariadne** GraphQL schema exposes a time-range query from now up to 72 hours ago. An SSE endpoint (`/events-stream`) subscribes to the `processed_events` exchange and pushes new events to connected clients in real time.
 
-5. **Frontend** — The React client fetches events via GraphQL on load and subscribes to the SSE stream for live updates, rendering all events on an interactive map.
+5. **Frontend** — The React client fetches events via GraphQL on load and subscribes to the SSE stream for live updates, rendering events on an interactive map with municipality polygon overlays that highlight based on viewed events.
 
 ## Cost Optimization
 
