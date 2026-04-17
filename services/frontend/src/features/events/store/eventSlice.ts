@@ -32,6 +32,7 @@ export interface TelegramEvent extends OsintEvent<TelegramEventData> {
   source: 'telegram';
 }
 
+// Union type for all event types, can be extended in the future with more sources
 export type AnyOsintEvent = TelegramEvent;
 
 interface TimeRange {

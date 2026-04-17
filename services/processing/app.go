@@ -5,12 +5,12 @@ import (
 	"log"
 	"time"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	de "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction"
-	MessageQueue "github.com/IshaySela/israel-osint-ai/services/processing/messagebroker"
-	"github.com/IshaySela/israel-osint-ai/services/processing/processor"
-	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
-	"github.com/IshaySela/israel-osint-ai/services/processing/workerpool"
+	"processing/config"
+	de "processing/dataextraction"
+	MessageQueue "processing/messagebroker"
+	"processing/processor"
+	storage "processing/storage"
+	"processing/workerpool"
 	"golang.org/x/time/rate"
 )
 

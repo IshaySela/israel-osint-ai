@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "raw_telegram_event_message.schema.json",
+  "title": "RawTelegramEventMessage",
+  "description": "Unprocessed Telegram message event published to the raw_events RabbitMQ exchange by the telegram-scraper service. Extends RawOsintEventMessage.",
+  "allOf": [
+    { "$ref": "./raw_osint_event_message.schema.json" }
+  ],
+  "properties": {
+    "source": {
+      "type": "string",
+      "const": "telegram"
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "event_type": {
+          "type": "string",
+          "enum": ["rocket_fire", "shooting", "attack", "missle_hit", "red_alert", "not_relevant"],
+          "description": "Classified event type."
+        },
+        "chat_id": {
+          "type": "integer",
+          "description": "Telegram chat ID. Can be negative for groups and supergroups."
+        },
+        "channel_title": {
+          "type": "string",
+          "description": "Human-readable Telegram channel name."
+        },
+        "channel_main_lang": {
+          "type": "string",
+          "description": "BCP-47 language code of the channel, e.g. 'he' for Hebrew."
+        },
+        "msg_id": {
+          "type": "integer",
+          "description": "Telegram message ID within the channel."
+        }
+      },
+      "required": ["event_type", "chat_id", "channel_title", "channel_main_lang", "msg_id"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["source", "data"]
+}

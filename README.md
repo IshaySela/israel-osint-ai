@@ -32,9 +32,9 @@ docker compose down
 ## Project Architecture
 The project is comprised of 4 layers:
 
-- **Ingestion Layer** - Ingest data form various sources and publish to RabbitMQ
+- **Ingestion Layer** - Ingest data form various sources and publish to RabbitMQ (currently only telegram scraper is implemented)
 - **Processing Layer** - Listen to raw events from the queue and extract info (geocode, AI sumamry, etc.) and index to ES
-- **Backend for Frontend** - Provide API for the frontend to view the data
+- **Backend for Frontend** - Provide API for the frontend to query the data and get real time notifications
 - **Frontend** - User interface for the end user.
  
 Refer to [ARCHITECTURE.md](ARCHITECTURE.md) for more details.
@@ -62,11 +62,16 @@ Basic implementation of the services, ensure that data flows correctly and visua
 - GraphQL query for events in the last 24 hours ([#30](https://github.com/IshaySela/israel-osint-ai/issues/30))
 - Source metadata from telegram scraper ([#28](https://github.com/IshaySela/israel-osint-ai/issues/28))
 
+### Sprint 4: Map Enrichment & AI Quality - Done
+- Municipality polygon overlay with event count tooltip ([#49](https://github.com/IshaySela/israel-osint-ai/issues/49))
+- Structured outputs with OpenAI API for reliable AI summaries ([#50](https://github.com/IshaySela/israel-osint-ai/issues/50))
+- Improved code quality in the Frontend (typing, sepration of components etc.)
 ## Roadmap
 ### Features
 - Add RSS news feed ingestion service ([#37](https://github.com/IshaySela/israel-osint-ai/issues/37))
 - Support images & videos from telegram scraper ([#31](https://github.com/IshaySela/israel-osint-ai/issues/31))
 - Geospatial search — GraphQL query by point, radius & time frame ([#39](https://github.com/IshaySela/israel-osint-ai/issues/39))
+- Display icons based on event type for telegram events ([#51](https://github.com/IshaySela/israel-osint-ai/issues/51))
 - Support locally deployed LLM via Ollama for development ([#25](https://github.com/IshaySela/israel-osint-ai/issues/25))
 - Structured logs streamed to Elasticsearch across all services ([#34](https://github.com/IshaySela/israel-osint-ai/issues/34))
 - Event ID field for end-to-end event tracking ([#41](https://github.com/IshaySela/israel-osint-ai/issues/41))
@@ -75,7 +80,8 @@ Basic implementation of the services, ensure that data flows correctly and visua
 - AI summary translates English events into Hebrew ([#38](https://github.com/IshaySela/israel-osint-ai/issues/38))
 - Events with too-broad locations still indexed ([#32](https://github.com/IshaySela/israel-osint-ai/issues/32))
 - GraphQL query fails on missing/malformed ES documents ([#35](https://github.com/IshaySela/israel-osint-ai/issues/35), [#36](https://github.com/IshaySela/israel-osint-ai/issues/36))
+- Missing error boundary for EventMap component ([#52](https://github.com/IshaySela/israel-osint-ai/issues/52))
 
 ### Chores
-- Replace deprecated `build.bin` with `build.entrypoint` in `.air.toml` ([#33](https://github.com/IshaySela/israel-osint-ai/issues/33))
 - Add Pydantic model in backend `elasticsearch_client.py` ([#40](https://github.com/IshaySela/israel-osint-ai/issues/40))
+- Define Elasticsearch index mappings for `osint_events` and `geocode_cache` ([#44](https://github.com/IshaySela/israel-osint-ai/issues/44))

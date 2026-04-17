@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "raw_osint_event_message.schema.json",
+  "title": "RawOsintEventMessage",
+  "description": "Base schema for all unprocessed OSINT events published to the raw_events RabbitMQ exchange by ingestion scrapers.",
+  "type": "object",
+  "properties": {
+    "app_ev_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID generated at the scraper level to uniquely identify this event."
+    },
+    "raw_message": {
+      "type": "string",
+      "description": "The full raw message text from the source, unmodified."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "Event datetime produced by Python str(datetime). Format: 'YYYY-MM-DD HH:MM:SS+HH:MM' (space separator, not ISO 8601 T).",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}$"
+    },
+    "source": {
+      "type": "string",
+      "description": "Identifies the ingestion source (e.g. telegram, rss, twitter)."
+    },
+    "data": {
+      "type": "object",
+      "description": "Source-specific payload. Shape depends on the value of source.",
+      "additionalProperties": true
+    }
+  },
+  "required": ["app_ev_id", "raw_message", "timestamp", "source", "data"]
+}

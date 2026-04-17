@@ -1,8 +1,8 @@
 package messagebroker
 
 import (
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
-	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	models "processing/models"
+	storage "processing/storage"
 )
 
 type EventsMessageFields struct {

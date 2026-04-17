@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	"processing/config"
+	models "processing/models"
 	"github.com/elastic/go-elasticsearch/v8"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v8/typedapi/types"

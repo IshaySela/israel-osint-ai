@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/config"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
-	"github.com/IshaySela/israel-osint-ai/services/processing/storage"
-	"github.com/IshaySela/israel-osint-ai/services/processing/workerpool"
+	"processing/config"
+	models "processing/models"
+	"processing/storage"
+	"processing/workerpool"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 

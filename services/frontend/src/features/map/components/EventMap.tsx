@@ -1,14 +1,25 @@
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useState, useMemo } from 'react';
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
-import { useSelector, useDispatch } from 'react-redux';
+import type { FeatureCollection, Polygon, MultiPolygon } from 'geojson';
+import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
+import { point } from '@turf/helpers';
+import { useSelector } from 'react-redux';
 import type { RootState } from '../../../store';
-import { setSelectedEvent } from '../../events/store/eventSlice';
 import 'leaflet/dist/leaflet.css';
-
+import MapRecenter from './MapRecenter';
 // Fix for default Leaflet icon
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { EventPopup } from './EventPopup';
+
+interface MuniProperties {
+  CR_PNIM: string;
+  Muni_Eng: string;
+  Muni_Heb: string;
+  [key: string]: unknown;
+}
+
 
 const DefaultIcon = L.icon({
   iconUrl: markerIcon,
@@ -19,42 +30,27 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Custom Marker Creator
-const createPulseIcon = (isSelected: boolean) => {
-  return L.divIcon({
-    className: 'custom-pulse-icon',
-    html: `
-      <div class="relative flex items-center justify-center">
-        <div class="absolute w-4 h-4 rounded-full bg-cyan-500 ${isSelected ? 'animate-ping scale-150' : 'animate-pulse opacity-50'}"></div>
-        <div class="relative w-3 h-3 rounded-full bg-cyan-400 border border-white shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
-      </div>
-    `,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-  });
-};
-
-// Map Recenter Component
-const MapRecenter: React.FC = () => {
-  const map = useMap();
-  const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
-
-  useEffect(() => {
-    if (selectedEvent && selectedEvent.locations.length > 0) {
-      const { lat, lon } = selectedEvent.locations[0];
-      map.flyTo([parseFloat(lat), parseFloat(lon)], 13, {
-        duration: 1.5,
-      });
-    }
-  }, [selectedEvent, map]);
-
-  return null;
-};
 
 const EventMap: React.FC = () => {
-  const dispatch = useDispatch();
   const events = useSelector((state: RootState) => state.event.events);
-  const selectedEvent = useSelector((state: RootState) => state.event.selectedEvent);
+  const [muniData, setMuniData] = useState<FeatureCollection<Polygon | MultiPolygon, MuniProperties> | null>(null);
+
+  useEffect(() => {
+    fetch('/muni_il_compressed.json')
+      .then(r => r.json())
+      .then(setMuniData);
+  }, []);
+
+  const muniEventCounts = useMemo<Map<string, number>>(() => {
+    if (!muniData) return new Map();
+    const pts = events.flatMap(e => e.locations.map(l => point([parseFloat(l.lon), parseFloat(l.lat)])));
+    const counts = new Map<string, number>();
+    for (const feature of muniData.features) {
+      const count = pts.filter(pt => booleanPointInPolygon(pt, feature)).length;
+      if (count > 0) counts.set(feature.properties.CR_PNIM, count);
+    }
+    return counts;
+  }, [muniData, events]);
 
   return (
     <div className="w-full h-full relative z-0">
@@ -71,44 +67,33 @@ const EventMap: React.FC = () => {
         
         <MapRecenter />
 
+        {muniData && (
+          <GeoJSON
+            data={muniData}
+            style={(feature) => {
+              const id = (feature?.properties as MuniProperties | null)?.CR_PNIM;
+              return id && muniEventCounts.has(id)
+                ? { color: '#22d3ee', weight: 1.5, fillOpacity: 0.2, fillColor: '#22d3ee' }
+                : { color: '#D3D3D3', weight: 0.05, fillOpacity: 0.1, fillColor: '#D3D3D3' };
+            }}
+            onEachFeature={(feature, layer) => {
+              const props = feature.properties as MuniProperties;
+              const count = muniEventCounts.get(props.CR_PNIM);
+              if (count) {
+                layer.bindTooltip(
+                  `<div style="font-family:monospace;font-size:11px"><b>${props.Muni_Eng}</b><br/>${count} event${count > 1 ? 's' : ''}</div>`,
+                  { sticky: true }
+                );
+              }
+            }}
+          />
+        )}
+
         {events.map((event, eventIdx) => 
-          event.locations.map((loc, locIdx) => {
-            const isSelected = selectedEvent?.timestamp_epoch === event.timestamp_epoch && selectedEvent?.raw_message === event.raw_message;
-            return (
-              <Marker
-                key={`${event.timestamp_epoch}-${eventIdx}-${locIdx}`}
-                position={[parseFloat(loc.lat), parseFloat(loc.lon)]}
-                icon={createPulseIcon(isSelected)}
-                eventHandlers={{
-                  click: () => dispatch(setSelectedEvent(event)),
-                }}
-              >
-                <Popup className="custom-popup">
-                  <div className="p-2 dir-rtl text-right">
-                    <h3 className="font-bold text-slate-900 mb-1">{loc.name}</h3>
-                    <p className="text-xs text-slate-700">{event.summary}</p>
-                    <span className="text-[10px] text-slate-500 font-mono mt-2 block">
-                      {new Date(event.timestamp_epoch * 1000).toLocaleString('he-IL')}
-                    </span>
-                  </div>
-                </Popup>
-              </Marker>
-            );
-          })
+          <div key={`event-popup-${eventIdx}`}><EventPopup event={event} /></div>
         )}
       </MapContainer>
       
-      {/* Legend / Overlay Controls can go here */}
-      <div className="absolute bottom-6 right-6 z-1000 pointer-events-none">
-        <div className="bg-slate-950/80 backdrop-blur-md border border-cyan-500/20 p-3 rounded text-[10px] font-mono text-cyan-500 space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_5px_rgba(34,211,238,0.8)]"></span>
-            ACTIVE OSINT EVENT
-          </div>
-          <div className="opacity-50">SRCE: TELEGRAM_SCRAPER</div>
-          <div className="opacity-50">LYR: CARTODB_DARK</div>
-        </div>
-      </div>
     </div>
   );
 };

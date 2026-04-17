@@ -4,8 +4,8 @@ import (
 	"context"
 	"log"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
+	"processing/dataextraction/geocodeerrors"
+	models "processing/models"
 )
 
 type GeocoderFunction func(string) (models.Geocode, *geocodeerrors.GeocodeError)

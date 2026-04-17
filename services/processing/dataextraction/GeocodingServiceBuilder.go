@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/geocodeerrors"
-	nominatim "github.com/IshaySela/israel-osint-ai/services/processing/dataextraction/nominatimgeocoder"
-	models "github.com/IshaySela/israel-osint-ai/services/processing/models"
-	storage "github.com/IshaySela/israel-osint-ai/services/processing/storage"
+	"processing/dataextraction/geocodeerrors"
+	nominatim "processing/dataextraction/nominatimgeocoder"
+	models "processing/models"
+	storage "processing/storage"
 	"golang.org/x/time/rate"
 )
 
