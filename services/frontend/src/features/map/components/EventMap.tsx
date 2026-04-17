@@ -74,7 +74,7 @@ const EventMap: React.FC = () => {
               const id = (feature?.properties as MuniProperties | null)?.CR_PNIM;
               return id && muniEventCounts.has(id)
                 ? { color: '#22d3ee', weight: 1.5, fillOpacity: 0.2, fillColor: '#22d3ee' }
-                : { color: 'transparent', weight: 0, fillOpacity: 0 };
+                : { color: '#D3D3D3', weight: 0.05, fillOpacity: 0.1, fillColor: '#D3D3D3' };
             }}
             onEachFeature={(feature, layer) => {
               const props = feature.properties as MuniProperties;
