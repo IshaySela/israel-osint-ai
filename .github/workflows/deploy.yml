@@ -19,11 +19,20 @@ jobs:
 
       - name: SSH and deploy
         uses: appleboy/ssh-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.SSH_DEPLOY_USERNAME }}
           password: ${{ secrets.SSH_DEPLOY_PASSWORD }}
+          envs: GITHUB_TOKEN
           script: |
-            cd /home/
-            ls
-            echo "Logged to host"
+            echo "Starting deployment process"
+            mkdir -p /app/deployment
+            cd /app/deployment
+            if [ -d "/app/deployment.git" ]; then
+            git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/" \
+              -C /app/deployment fetch origin main && git -C /app/deployment --hard origin/main
+            else
+              git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" /app/deployment
+            fi
