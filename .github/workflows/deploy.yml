@@ -36,3 +36,5 @@ jobs:
             else
               git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" ~/deployment
             fi
+            docker compose down
+            docker compose up --build -d
