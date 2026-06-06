@@ -1,0 +1,27 @@
+name: deploy-app
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Connect to Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+          tags: tag:ishay-osint-cd
+
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.SSH_DEPLOY_USERNAME }}
+          password: ${{ secrets.SSH_DEPLOY_PASSWORD }}
+          script: |
+            cd /home
+            ls
+            echo "Logged to host"
