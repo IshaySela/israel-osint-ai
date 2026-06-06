@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - feature/cd-pipeline
 
 jobs:
   deploy:
@@ -22,6 +23,6 @@ jobs:
           username: ${{ secrets.SSH_DEPLOY_USERNAME }}
           password: ${{ secrets.SSH_DEPLOY_PASSWORD }}
           script: |
-            cd /home
+            cd /home/
             ls
             echo "Logged to host"
