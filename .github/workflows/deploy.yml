@@ -14,7 +14,7 @@ jobs:
         uses: tailscale/github-action@v4
         with:
           oauth-client-id: $${{secrets.TS_OATUH_CLIENT_ID}}
-          oauth-client-secret: ${{ secrets.TS_OAUTH_CLIENT_SECREET }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECREET }}
           tags: tag:ishay-osint-cd
 
       - name: SSH and deploy
