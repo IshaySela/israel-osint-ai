@@ -30,10 +30,10 @@ jobs:
             echo "Starting deployment process"
             mkdir -p ~/app
             cd ~/app
-            if [ -d "~/app/.git" ]; then
-              git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/" \
-              -C ~/app fetch origin main \
-              && git -C ~/app reset --hard origin/main
+            if [ -d ".git" ]; then
+              git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/"
+              git fetch origin master
+              git reset --hard origin/master
             else
               git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" ~/app
             fi
