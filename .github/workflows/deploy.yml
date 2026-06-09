@@ -31,8 +31,9 @@ jobs:
             mkdir -p ~/app
             cd ~/app
             if [ -d "~/app/.git" ]; then
-            git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/" \
-              -C ~/app fetch origin main && git -C ~/app --hard origin/main
+              git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/" \
+              -C ~/app fetch origin main \
+              && git -C ~/app reset --hard origin/main
             else
               git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" ~/app
             fi
