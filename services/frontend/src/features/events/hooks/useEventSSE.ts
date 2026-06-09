@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { addEvent } from '../store/eventSlice';
+import config from '../../../store/config';
 
-export const useEventSSE = (url: string = 'http://localhost:5000/events-stream') => {
+export const useEventSSE = (url: string = `${config.BACKEND_URL}/events-stream`) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
