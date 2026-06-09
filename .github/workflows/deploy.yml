@@ -28,13 +28,13 @@ jobs:
           envs: GITHUB_TOKEN
           script: |
             echo "Starting deployment process"
-            mkdir -p ~/deployment
-            cd ~/deployment
-            if [ -d "~/deployment.git" ]; then
+            mkdir -p ~/app
+            cd ~/app
+            if [ -d "~/app/.git" ]; then
             git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/" \
-              -C ~/deployment fetch origin main && git -C ~/deployment --hard origin/main
+              -C ~/app fetch origin main && git -C ~/app --hard origin/main
             else
-              git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" ~/deployment
+              git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" ~/app
             fi
             docker compose down
             docker compose up --build -d
