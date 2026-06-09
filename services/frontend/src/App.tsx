@@ -5,7 +5,6 @@ import EventMap from './features/map/components/EventMap';
 const App: React.FC = () => {
   return (
     <div className="h-full w-full bg-slate-950 flex relative overflow-hidden">
-      <h1>Welcome to osint ai app!</h1>
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(34,211,238,0.05),transparent_70%)] pointer-events-none"></div>
       <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-cyan-500/50 to-transparent"></div>

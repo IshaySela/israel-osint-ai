@@ -32,8 +32,8 @@ jobs:
             cd ~/app
             if [ -d ".git" ]; then
                 git -c "url.https://x-access-token:${GITHUB_TOKEN}@github.com/.insteadOf=https://github.com/" \
-                -C ~/app fetch origin feature/cd-pipeline \
-                && git checkout feature/cd-pipeline && git -C ~/app reset --hard origin/feature/cd-pipeline
+                -C ~/app fetch origin master \
+                && git -C ~/app reset --hard origin/master
             else
               git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/IshaySela/israel-osint-ai.git" ~/app
             fi
