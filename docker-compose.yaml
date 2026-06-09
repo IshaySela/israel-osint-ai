@@ -82,13 +82,14 @@ services:
       context: ./services/frontend
       dockerfile: Dockerfile.dev
     container_name: frontend
+    env_file:
+      - path: ./services/frontend/.env
+        required: false
     ports:
       - "5173:5173"
     volumes:
       - ./services/frontend:/app
       - /app/node_modules
-    environment:
-      - VITE_GRAPHQL_URL=http://localhost:5000/graphql
     networks:
       - osint_network
 
